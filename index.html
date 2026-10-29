@@ -4826,7 +4826,7 @@ FINISH WITH
         }
         function deckFonts(O) {
             const B = PPTX_DENSITY[O.density] || 19;
-            return { title: B >= 22 ? 34 : B >= 19 ? 30 : 27, body: B, head: B + 1, desc: Math.max(13, B - 3), small: Math.max(11, B - 6) };
+            return { title: B >= 22 ? 36 : B >= 19 ? 32 : 28, body: B, head: B + 1, desc: Math.max(13, B - 3), small: Math.max(11, B - 6) };
         }
 
         // ---------- text measuring ----------
@@ -4835,7 +4835,9 @@ FINISH WITH
         function nLines(text, w, fs) {
             const c = String(text || '').replace(/\*\*|__|[*_`$]/g, '');
             const cpl = Math.max(6, Math.floor(w * 72 / (fs * FONT_K)));
-            return c.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / cpl)), 0);
+            const longest = Math.max(0, ...c.split(/\s+/).map(x => x.length));
+            const penalty = longest > cpl * 0.92 ? 6 : 0;   // a word that cannot fit gets cut — make this size lose
+            return c.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / cpl)), 0) + penalty;
         }
         function textH(text, w, fs) { return nLines(text, w, fs) * LH(fs); }
 
@@ -5342,10 +5344,10 @@ FINISH WITH
             const data = round ? [series[0]] : series;
             const opt = {
                 x, y, w, h, chartColors: th.palette, showTitle: false,
-                showLegend: round || data.length > 1, legendPos: round ? 'r' : 'b', legendFontSize: F.small + 3, legendColor: th.text, legendFontFace: th.body,
-                showValue: !round, showPercent: round, dataLabelFontSize: F.small + 2, dataLabelFontFace: th.body,
+                showLegend: round || data.length > 1, legendPos: round ? 'r' : 'b', legendFontSize: F.desc, legendColor: th.text, legendFontFace: th.body,
+                showValue: !round, showPercent: round, dataLabelFontSize: F.small + 3, dataLabelFontFace: th.body,
                 dataLabelColor: round ? 'FFFFFF' : th.text,
-                catAxisLabelColor: th.text, valAxisLabelColor: th.muted, catAxisLabelFontSize: F.small + 3, valAxisLabelFontSize: F.small + 1,
+                catAxisLabelColor: th.text, valAxisLabelColor: th.muted, catAxisLabelFontSize: F.desc, valAxisLabelFontSize: F.small + 2,
                 catAxisLabelFontFace: th.body, valAxisLabelFontFace: th.body,
                 valGridLine: { color: th.line, size: 0.5, style: 'solid' }, catGridLine: { style: 'none' }
             };
@@ -5549,6 +5551,12 @@ FINISH WITH
             const vis = page.visual;
             const tw = vis ? box.w * (vis.t === 'image' ? 0.52 : 0.44) : box.w;
             page.blocks.forEach(b => { b._narrow = !!vis; });
+            // grow text and boxes until the content fills most of the slide (never shrink below the base size)
+            const measure = G => page.blocks.map(b => blockH(b, tw, G, th, O)).reduce((a, v) => a + v, 0) + 0.3 * Math.max(0, page.blocks.length - 1);
+            const scaleF = k => ({ title: F.title, body: Math.round(F.body * k), head: Math.round(F.head * k), desc: Math.round(F.desc * k), small: Math.round(F.small * k) });
+            if (O.vcenter !== false && page.blocks.length && !page.blocks.some(b => b.t === 'code' || b.t === 'table')) {
+                for (const k of [1.45, 1.35, 1.25, 1.15, 1.08]) { const G = scaleF(k); if (measure(G) <= box.h * 0.82) { F = G; break; } }
+            }
             const hs = page.blocks.map(b => blockH(b, tw, F, th, O));
             const total = hs.reduce((a, v) => a + v, 0) + 0.3 * Math.max(0, hs.length - 1);
             let y = box.y + (O.vcenter && total < box.h ? (box.h - total) * 0.42 : 0);
@@ -5576,7 +5584,7 @@ FINISH WITH
                 s.addShape(R.rect, { x: 0, y: 0, w: pw, h: H, fill: { color: th.strong }, line: { color: th.strong } });
                 s.addShape(R.rect, { x: 0.8, y: H * 0.3 - 0.35, w: 0.9, h: 0.08, fill: { color: th.dark ? on : th.accent }, line: { width: 0 } });
                 s.addText(cover.title, { x: 0.8, y: H * 0.3, w: pw - 1.5, h: 2.0, fontSize: tFs, bold: true, color: on, fontFace: th.head, valign: 'top', fit: 'shrink', margin: 0 });
-                if (cover.sub) s.addText(cover.sub, { x: 0.8, y: H * 0.3 + 2.1, w: pw - 1.5, h: 1.1, fontSize: 20, color: pxMix(on, th.strong, 0.85), fontFace: th.body, valign: 'top', fit: 'shrink', margin: 0 });
+                if (cover.sub) s.addText(cover.sub, { x: 0.8, y: H * 0.3 + 2.1, w: pw - 1.5, h: 1.1, fontSize: 22, color: pxMix(on, th.strong, 0.85), fontFace: th.body, valign: 'top', fit: 'shrink', margin: 0 });
                 if (meta) s.addText(meta, { x: 0.8, y: H - 1.0, w: pw - 1.5, h: 0.4, fontSize: 13, color: pxMix(on, th.strong, 0.75), fontFace: th.body, margin: 0 });
                 addLogo(s, pw + (W - pw) / 2 - 1.0, 0.6, 2.0, 0.9);
             } else if (th.cover === 'full') {
@@ -5584,7 +5592,7 @@ FINISH WITH
                 drawMotif(pptx, s, th, th.motif, W * 0.55, 0, W * 0.45, H, on);
                 s.addShape(R.rect, { x: 0.9, y: H * 0.32 - 0.35, w: 0.9, h: 0.08, fill: { color: on }, line: { width: 0 } });
                 s.addText(cover.title, { x: 0.9, y: H * 0.32, w: W * 0.5, h: 2.0, fontSize: tFs + 2, bold: true, color: on, fontFace: th.head, valign: 'top', fit: 'shrink', margin: 0 });
-                if (cover.sub) s.addText(cover.sub, { x: 0.9, y: H * 0.32 + 2.1, w: W * 0.5, h: 1.0, fontSize: 20, color: pxMix(on, th.strong, 0.85), fontFace: th.body, valign: 'top', fit: 'shrink', margin: 0 });
+                if (cover.sub) s.addText(cover.sub, { x: 0.9, y: H * 0.32 + 2.1, w: W * 0.5, h: 1.0, fontSize: 22, color: pxMix(on, th.strong, 0.85), fontFace: th.body, valign: 'top', fit: 'shrink', margin: 0 });
                 if (meta) s.addText(meta, { x: 0.9, y: H - 1.0, w: W * 0.6, h: 0.4, fontSize: 13, color: pxMix(on, th.strong, 0.75), fontFace: th.body, margin: 0 });
                 addLogo(s, 0.9, 0.6, 2.0, 0.8, { addShape: (t, o) => s.addShape(t, o), ShapeType: pptx.ShapeType });
             } else if (th.cover === 'band') {
@@ -5688,13 +5696,15 @@ FINISH WITH
         }
 
         // ---------- transitions (PptxGenJS has none: add them to the slide XML) ----------
-        async function addTransitions(buf, kind) {
+        async function finishDeck(buf, kind) {
             const X = { fade: '<p:fade/>', push: '<p:push dir="u"/>', wipe: '<p:wipe dir="r"/>', cover: '<p:cover dir="l"/>', split: '<p:split orient="vert" dir="out"/>' }[kind];
             const zip = await JSZip.loadAsync(buf);
             const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n));
             for (const n of names) {
                 let x = await zip.file(n).async('string');
-                if (x.includes('<p:transition')) continue;
+                let id = 1;
+                x = x.replace(/<p:cNvPr id="\d+"/g, () => '<p:cNvPr id="' + (++id) + '"');
+                if (!X || x.includes('<p:transition')) { zip.file(n, x); continue; }
                 const t = '<p:transition spd="med">' + X + '</p:transition>';
                 if (x.includes('<p:timing')) x = x.replace('<p:timing', t + '<p:timing');
                 else if (x.includes('</p:clrMapOvr>')) x = x.replace('</p:clrMapOvr>', '</p:clrMapOvr>' + t);
@@ -5748,9 +5758,9 @@ FINISH WITH
             if (typeof PptxGenJS === 'undefined') throw new Error('PowerPoint library did not load — check your connection');
             const { pptx, title } = await buildDeck(markdown, PPTX_OPTS);
             const fileName = (title.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'presentation') + '.pptx';
-            if (PPTX_OPTS.transition && PPTX_OPTS.transition !== 'none' && typeof JSZip !== 'undefined') {
+            if (typeof JSZip !== 'undefined') {
                 const buf = await pptx.write({ outputType: 'arraybuffer' });
-                const blob = await addTransitions(buf, PPTX_OPTS.transition);
+                const blob = await finishDeck(buf, PPTX_OPTS.transition);
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob); a.download = fileName;
                 document.body.appendChild(a); a.click(); a.remove();
