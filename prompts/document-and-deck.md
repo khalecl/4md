@@ -29,6 +29,9 @@ FOR EACH ### TOPIC USE THIS PATTERN
    - `- Q1: …` / `- 2026: …` / `- Phase 1: …` → timeline
    - `- **35%**: meaning` → stat tiles
    - 2–4 short items each with indented sub-bullets → columns
+   - `- **61%**: meaning` alone on a slide → giant-number slide; one short sentence alone → statement slide
+   - `<!-- chart: bar|line|pie|doughnut -->` above a numeric table → native chart in the deck; the document still shows it as a normal table
+   - `![Caption]()` → picture placeholder beside the text
 2. A `<!-- notes: … -->` line for the presenter.
 3. A `<!-- doc-only -->` block with the full explanation: paragraphs, worked examples, tables and equations.
 

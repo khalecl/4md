@@ -555,6 +555,13 @@
         .pt-mini em { position:absolute; left:12%; top:4%; font-style:normal; font-weight:700; font-size:13px; }
         .pt-mini s { position:absolute; left:12%; height:3px; width:70%; border-radius:2px; opacity:.55; text-decoration:none; }
         .pt-mini s:first-of-type { top:48%; } .pt-mini s:last-of-type { top:62%; }
+        .ds-pane[data-pane="slides"] .ds-import-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+        .ds-pane[data-pane="slides"] label.tb { margin:0; }
+        .pt-sw { display:inline-block; width:14px; height:14px; border-radius:3px; margin:0 2px; vertical-align:middle; border:1px solid rgba(0,0,0,.12); }
+        .pt-report ul { margin:6px 0 0 18px; padding:0; } .pt-report li { margin:2px 0; }
+        .pt-tbl { border-collapse:collapse; margin-top:8px; font-size:12px; width:100%; }
+        .pt-tbl th, .pt-tbl td { border-bottom:1px solid #e5e7eb; padding:3px 6px; text-align:left; }
+        .pt-tbl tr.hot td { background:#fff4e5; }
         .pt-name { display:block; font-size:11px; color:var(--muted); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         @media (max-width:640px){ .pt-grid{ grid-template-columns:repeat(3,1fr);} }
         .pm-wrap { position:fixed; inset:0; z-index:150; display:none; align-items:center; justify-content:center; background:rgba(15,20,25,.4); padding:16px; }
@@ -803,49 +810,60 @@ QUALITY
 </script>
 
 <script type="text/plain" id="pmSrc-deck">
-You are writing a Markdown file that the 4md tool converts into a designed PowerPoint deck (PPTX). The tool lays out each slide automatically, including SmartArt-style layouts, so your job is to write SLIDE TEXT, not prose. Write ONLY the Markdown file, inside one ```markdown code block, with no commentary.
+You are writing a Markdown file that the 4md tool converts into a designed PowerPoint deck (PPTX). The tool does all the design — themes, SmartArt-style layouts, icons, native charts, statement slides — so your job is to write SLIDE TEXT in the right shapes, not prose. Write ONLY the Markdown file, inside one ```markdown code block, with no commentary.
 
 TOPIC
 {{TOPIC}}
 
-HOW HEADINGS BECOME SLIDES
-- `# Deck title` once, first line → cover slide. The single short line under it becomes the subtitle.
-- `## Section name` with NOTHING under it before the next `###` → numbered section-divider slide.
-- `### Slide title` → a content slide inside that section. (A `##` that has its own content is also a content slide.)
-- `<!-- slide -->` on its own line → continue on a new slide with the same title.
-- The tool adds an Agenda slide (from the sections) and a closing slide automatically — do not write them yourself.
+DECK STRUCTURE
+- `# Deck title` once, first line → cover slide. ONE short line under it → subtitle.
+- `## Section name` with NOTHING under it before the next `###` → numbered section-divider slide. Use 3–5 sections.
+- `### Slide title` → a content slide in that section. A `##` that has its own content is a content slide too.
+- `<!-- slide -->` → continue on a new slide with the same title.
+- The tool adds the Agenda slide (from your sections) and the closing slide — do not write them.
 
 SLIDE BUDGET (HARD LIMITS)
-- One idea per slide. Slide titles ≤ 6 words, and they should state the point ("Controls deliver most savings"), not just a topic ("Controls").
-- At most 6 bullets per slide, each ≤ 12 words. No full paragraphs; at most one sentence of plain text per slide.
-- Put detail, explanations and examples in speaker notes: `<!-- notes: what the presenter should say -->` (one line, directly under the slide content).
+- One idea per slide. Titles ≤ 7 words and they state the point ("Controls deliver most savings"), never a bare topic ("Controls").
+- ≤ 6 items per list, ≤ 12 words per item, ≤ 1 short sentence of plain text per slide, ≤ 2 elements per slide.
+- Detail and examples go in speaker notes: `<!-- notes: what the presenter says -->` on one line under the slide content. Every content slide gets notes.
 
-SMART LAYOUTS — write the list in the matching shape and the tool draws it
+SMART LAYOUTS — write the list in the matching shape; the tool draws it
 | Write this | You get |
 |---|---|
-| `- **Term**: short description` (2–6 items) | Cards with headings |
-| `1. Short step` (2–5 items, ≤ 6 words each) | Process chevrons |
-| `1. Longer step sentence` (2–6 items) | Numbered vertical steps |
-| `- Q1: …`, `- 2026: …`, `- Phase 1: …`, `- Week 2: …` (2–6 items) | Timeline |
-| `- **42%**: what the number means` (2–6 items) | Big-number stat tiles |
-| 2–4 short top items each with indented `- ` sub-bullets | Coloured columns (good for compare/contrast) |
-| 2–6 short plain bullets | Numbered tiles |
+| `- **Term**: short description` (2–6 items) | Cards with an icon, heading and text |
+| `1. **Step**: short description` (2–5 items) | Process chevrons |
+| `1. A longer step sentence` (2–6 items) | Numbered vertical steps |
+| `- Q1: …` / `- 2026: …` / `- Phase 1: …` (2–6 items) | Timeline |
+| `- **42%**: what it means` (2–6 items) | Ring charts (percentages) or big-number tiles (other numbers: `**2 yrs**`, `**860 MWh**`, `**SAR 1.2m**`) |
+| 2–4 short headings each with indented `- ` sub-bullets | Coloured columns (compare / contrast, workstreams) |
+| 2–6 short plain bullets | Icon tiles |
+Force a layout with a line BEFORE the list: `<!-- layout: cards|icons|process|steps|timeline|columns|stats|bullets -->`.
 
-Force a layout by putting a directive on the line BEFORE the list:
-`<!-- layout: cards -->` — choices: cards, tiles, process, steps, timeline, columns, stats, bullets (bullets = plain list).
+ICONS
+Chosen automatically from the card heading. To choose yourself, put `<!-- icons: bolt, money, leaf -->` before the list (one per item, in order).
+Available: bolt money clock check users leaf gauge shield chart gear building drop sun thermo target bulb doc flag search alert factory plug wrench globe rocket calendar trend image cloud star book truck lock handshake.
 
-OTHER SLIDE ELEMENTS
-- Tables: pipe tables, ≤ 5 columns, ≤ 6 rows; right-align numbers with `---:`. Longer tables continue on "(cont.)" slides — avoid that.
-- Diagrams: ```mermaid fenced blocks (flowchart LR/TD, pie, timeline, mindmap, gantt). ≤ 8 nodes. A diagram plus ≤ 3 bullets sits side by side.
-- Equations: display maths between `$$ … $$` on its own lines; inline `$…$` is shown as plain symbols.
-- A single `> quote` line becomes a highlighted callout slide element — use for a strong key message.
-- Code: short fenced blocks (≤ 12 lines) only when the audience is technical.
+STATEMENT SLIDES (full-colour, big text) — use 2–3 per deck for rhythm
+- A slide whose only content is ONE short sentence (≤ 22 words) → statement slide.
+- A slide whose only content is `> Quote text — Source` → quote slide. Only quote real, attributable sources; otherwise write it as your own statement.
+- A slide whose only content is ONE stat item `- **61%**: of electricity goes to cooling` → giant-number slide.
 
-DO NOT USE
-Raw HTML (other than the comment directives above), images, links as content, paragraphs over 25 words, more than 2 elements on one slide.
+CHARTS (native, editable in PowerPoint)
+Put a chart directive on the line before a pipe table; first column = categories, numeric columns = series:
+`<!-- chart: bar -->` (also hbar, line, area, pie, doughnut, radar). Use pie/doughnut only for parts of a whole (≤ 6 slices). Up to 2 short bullets can sit beside the chart.
+Tables without a chart directive stay tables: ≤ 5 columns, ≤ 6 rows, right-align numbers with `---:`.
 
-PACE
-Aim for roughly one content slide per 2 minutes of talk. Mix layouts — never more than two plain-bullet slides in a row. Close with a `## Key Takeaways` slide written as `- **Term**: …` cards or `- **number**: …` stats.
+PICTURES
+`![Caption describing the photo](https://…)` on its own line. With no URL — `![Site photo: chiller plant]()` — the tool draws a picture placeholder for the presenter to fill. Text plus a picture sit side by side.
+
+OTHER
+Mermaid diagrams in ```mermaid blocks (≤ 8 nodes) sit beside text. Display maths `$$ … $$` on its own lines. Code blocks ≤ 12 lines, only for technical audiences.
+
+DO NOT
+Write raw HTML (only the comment directives above), paragraphs over 25 words, more than two plain-bullet slides in a row, made-up statistics presented as fact (mark estimates as "est."), or an Agenda / Thank-you slide.
+
+RHYTHM
+Aim for one content slide per 1.5–2 minutes. Vary layouts: cards → process → stats → statement → chart → timeline… Close with `## Key Takeaways` as 3–4 `- **Term**: …` cards.
 </script>
 
 <script type="text/plain" id="pmSrc-both">
@@ -880,6 +898,9 @@ FOR EACH ### TOPIC USE THIS PATTERN
    - `- Q1: …` / `- 2026: …` / `- Phase 1: …` → timeline
    - `- **35%**: meaning` → stat tiles
    - 2–4 short items each with indented sub-bullets → columns
+   - `- **61%**: meaning` alone on a slide → giant-number slide; one short sentence alone → statement slide
+   - `<!-- chart: bar|line|pie|doughnut -->` above a numeric table → native chart in the deck; the document still shows it as a normal table
+   - `![Caption]()` → picture placeholder beside the text
 2. A `<!-- notes: … -->` line for the presenter.
 3. A `<!-- doc-only -->` block with the full explanation: paragraphs, worked examples, tables and equations.
 
@@ -1175,38 +1196,104 @@ FINISH WITH
             <section class="ds-pane" data-pane="slides">
                 <div class="ds-legend">Deck theme</div>
                 <div class="pt-grid" id="ptGrid"></div>
+
                 <div class="ds-fieldset">
-                    <div class="ds-legend">Deck options</div>
+                    <div class="ds-legend">Style</div>
                     <div class="ds-row">
-                        <label>Aspect ratio<select id="ptRatio">
-                            <option value="16:9">16:9 widescreen</option><option value="16:10">16:10</option><option value="4:3">4:3 standard</option>
+                        <label>Title style<select id="ptTitleStyle">
+                            <option value="theme">Theme default</option><option value="band">Colour band</option><option value="side">Side bar</option>
+                            <option value="rule">Rule line</option><option value="underline">Short underline</option><option value="plain">Plain</option>
                         </select></label>
-                        <label>Body size (pt)<input type="number" id="ptSize" min="12" max="28" step="1"></label>
-                        <label>Heading font<input type="text" id="ptHead" list="dsFontList" placeholder="theme default"></label>
-                        <label>Body font<input type="text" id="ptBody" list="dsFontList" placeholder="theme default"></label>
-                        <label>Smart layouts<select id="ptSmart">
-                            <option value="auto">Auto (cards, process, timeline…)</option><option value="off">Off — plain bullets</option>
+                        <label>Cover style<select id="ptCoverStyle">
+                            <option value="theme">Theme default</option><option value="split">Split panel</option><option value="full">Full colour</option>
+                            <option value="band">Centre band</option><option value="center">Centred, light</option>
+                        </select></label>
+                        <label>Card style<select id="ptCardStyle">
+                            <option value="soft">Soft tint</option><option value="shadow">White with shadow</option>
+                            <option value="outline">Outline</option><option value="solid">Solid colour</option>
+                        </select></label>
+                        <label>Decoration<select id="ptMotif">
+                            <option value="theme">Theme default</option><option value="circles">Circles</option><option value="dots">Dot grid</option>
+                            <option value="stripes">Diagonal stripes</option><option value="blocks">Blocks</option><option value="none">None</option>
+                        </select></label>
+                        <label>Text size<select id="ptDensity">
+                            <option value="large">Large — big rooms</option><option value="standard">Standard</option><option value="compact">Compact — handouts</option>
                         </select></label>
                         <label>Bullet marker<select id="ptBullet">
                             <option value="auto">Theme default</option><option value="dot">● Dot</option><option value="square">■ Square</option>
                             <option value="arrow">▸ Arrow</option><option value="diamond">◆ Diamond</option><option value="check">✓ Check</option>
                             <option value="pointer">➤ Pointer</option><option value="dash">– Dash</option>
                         </select></label>
+                        <label>Heading font<input type="text" id="ptHead" list="dsFontList" placeholder="theme default"></label>
+                        <label>Body font<input type="text" id="ptBody" list="dsFontList" placeholder="theme default"></label>
+                    </div>
+                </div>
+
+                <div class="ds-fieldset">
+                    <div class="ds-legend">Smart content</div>
+                    <div class="ds-row">
+                        <label>Smart layouts<select id="ptSmart">
+                            <option value="auto">Auto (cards, process, timeline…)</option><option value="off">Off — plain bullets</option>
+                        </select></label>
+                        <label>Transition<select id="ptTransition">
+                            <option value="none">None</option><option value="fade">Fade</option><option value="push">Push</option>
+                            <option value="wipe">Wipe</option><option value="cover">Cover</option><option value="split">Split</option>
+                        </select></label>
+                        <label class="ds-check"><input type="checkbox" id="ptIcons"> Icons on cards</label>
+                        <label class="ds-check"><input type="checkbox" id="ptCharts"> Ring charts for % stats</label>
+                        <label class="ds-check"><input type="checkbox" id="ptVcenter"> Centre content vertically</label>
+                    </div>
+                </div>
+
+                <div class="ds-fieldset">
+                    <div class="ds-legend">Deck</div>
+                    <div class="ds-row">
+                        <label>Aspect ratio<select id="ptRatio">
+                            <option value="16:9">16:9 widescreen</option><option value="16:10">16:10</option><option value="4:3">4:3 standard</option>
+                        </select></label>
+                        <label>Closing text<input type="text" id="ptClosingText" placeholder="Thank you"></label>
+                        <label class="ds-check"><input type="checkbox" id="ptAgenda"> Agenda slide</label>
+                        <label class="ds-check"><input type="checkbox" id="ptClosing"> Closing slide</label>
                         <label class="ds-check"><input type="checkbox" id="ptNums"> Slide numbers</label>
                         <label class="ds-check"><input type="checkbox" id="ptFooter"> Footer text</label>
                         <label class="ds-check ds-wide"><input type="checkbox" id="ptMeta"> Author, company and date on the cover</label>
-                        <label class="ds-check"><input type="checkbox" id="ptAgenda"> Agenda slide</label>
-                        <label class="ds-check"><input type="checkbox" id="ptClosing"> Closing slide</label>
-                        <label class="ds-wide">Closing text<input type="text" id="ptClosingText" placeholder="Thank you"></label>
                     </div>
                 </div>
-                <p class="ds-note"><code>#</code> = cover slide · <code>##</code> = new slide (a section divider if it has no content of its own) ·
-                   <code>###</code> = slide inside that section · <code>---</code> = force a new slide. Long lists, tables and code
-                   continue on "(cont.)" slides; a diagram sits beside the text.<br>
-                   Deck-only controls (hidden in DOCX/PDF): <code>&lt;!-- layout: cards --&gt;</code> (cards, tiles, process, steps,
-                   timeline, columns, stats, bullets) · <code>&lt;!-- notes: … --&gt;</code> · <code>&lt;!-- slide --&gt;</code> ·
-                   <code>&lt;!-- slide-only --&gt;…&lt;!-- /slide-only --&gt;</code> · <code>&lt;!-- doc-only --&gt;…&lt;!-- /doc-only --&gt;</code>.
-                   Use <b>🤖 AI Prompt</b> to have an AI write this for you.</p>
+
+                <div class="ds-fieldset">
+                    <div class="ds-legend">Brand — your default template and logo</div>
+                    <div class="ds-import-actions">
+                        <input type="file" id="ptTplFile" accept=".pptx,.potx,.thmx" hidden>
+                        <label for="ptTplFile" class="tb primary">🎨 Use my PowerPoint template</label>
+                        <input type="file" id="ptLogoFile" accept="image/png,image/jpeg,image/svg+xml" hidden>
+                        <label for="ptLogoFile" class="tb">🏷 Add logo</label>
+                        <button type="button" id="ptLogoClear" class="tb">✕ Remove logo</button>
+                    </div>
+                    <div id="ptBrandReport" class="ds-import-report"></div>
+                </div>
+
+                <div class="ds-fieldset">
+                    <div class="ds-legend">Tools</div>
+                    <div class="ds-import-actions">
+                        <button type="button" id="ptLint" class="tb primary">🔍 Check my deck</button>
+                        <input type="file" id="ptAnalyzeFile" accept=".pptx" hidden>
+                        <label for="ptAnalyzeFile" class="tb">📊 Analyze a .pptx</label>
+                        <button type="button" id="ptReset" class="tb">↺ Reset slide settings</button>
+                    </div>
+                    <div id="ptToolReport" class="ds-import-report pt-report"></div>
+                </div>
+
+                <p class="ds-note">
+                    <b>Slides:</b> <code>#</code> cover · <code>##</code> section divider (no content of its own) or slide · <code>###</code> slide · <code>---</code> or <code>&lt;!-- slide --&gt;</code> new slide.<br>
+                    <b>Smart layouts:</b> <code>- **Term**: text</code> cards · <code>1. Step</code> process / steps · <code>- Q1: …</code> timeline ·
+                    <code>- **42%**: meaning</code> stats · short items with sub-bullets → columns · short bullets → icon tiles.
+                    A lone quote, a lone short sentence or a lone stat becomes a full-colour statement slide.<br>
+                    <b>Directives</b> (hidden in DOCX/PDF): <code>&lt;!-- layout: cards|icons|process|steps|timeline|columns|stats|statement|bullets --&gt;</code> ·
+                    <code>&lt;!-- chart: bar|hbar|line|area|pie|doughnut|radar --&gt;</code> above a table ·
+                    <code>&lt;!-- icons: bolt, money, leaf --&gt;</code> · <code>&lt;!-- notes: … --&gt;</code> · <code>![caption](image-url)</code> picture or placeholder ·
+                    <code>&lt;!-- slide-only --&gt;</code> / <code>&lt;!-- doc-only --&gt;</code> blocks.<br>
+                    <b>Icons:</b> <span id="ptIconList"></span>
+                </p>
             </section>
 
             <datalist id="dsFontList">
@@ -1848,7 +1935,8 @@ FINISH WITH
         function forDocument(md) {
             return md.replace(/<!--\s*slide-only\s*-->[\s\S]*?<!--\s*\/slide-only\s*-->\n?/gi, '')
                      .replace(/<!--\s*\/?doc-only\s*-->/gi, '\n')
-                     .replace(/^[ \t]*<!--[\s\S]*?-->[ \t]*$/gm, '');
+                     .replace(/^[ \t]*<!--[\s\S]*?-->[ \t]*$/gm, '')
+                     .replace(/^[ \t]*!\[([^\]]*)\]\([^)]*\)[ \t]*$/gm, (m, c) => c ? '*' + c + '*' : '');
         }
         function forSlides(md) {
             return md.replace(/<!--\s*doc-only\s*-->[\s\S]*?<!--\s*\/doc-only\s*-->\n?/gi, '')
@@ -4669,41 +4757,240 @@ FINISH WITH
         })();
         // ===== END PDF EXPORT =====
 
-        // ===== PPTX EXPORT =====
-        // Markdown -> slides:  # = cover slide, ## = new slide (or section divider
-        // when it has no content of its own), ### = new slide under that section,
-        // --- = force a new slide. Long content flows onto "(cont.)" slides.
+        // ===== PPTX EXPORT (v4) =====
+        // Markdown -> designed deck.  # = cover, ## = section divider (when it has no content of its own)
+        // or slide, ### = slide, --- / <!-- slide --> = new slide. Directives (deck only):
+        // <!-- layout: X -->, <!-- chart: X -->, <!-- icons: a, b -->, <!-- notes: … -->, slide-only / doc-only blocks.
         const PPTX_THEMES = {
-            navy:     { name: 'Executive Navy', bg: 'FFFFFF', title: '1F3864', accent: '2E75B6', text: '262626', muted: '7F7F7F', head: 'Calibri Light', body: 'Calibri',  bar: 'band',      cover: 'split'  },
-            energy:   { name: 'Energy Green',   bg: 'FFFFFF', title: '0F5F3A', accent: '33A036', text: '1F2933', muted: '6B7280', head: 'Segoe UI',      body: 'Segoe UI', bar: 'side',      cover: 'split'  },
-            midnight: { name: 'Midnight',       bg: '0F172A', title: 'F8FAFC', accent: '38BDF8', text: 'E2E8F0', muted: '94A3B8', head: 'Segoe UI',      body: 'Segoe UI', bar: 'rule',      cover: 'center', dark: true },
-            sand:     { name: 'Desert Sand',    bg: 'FAF6EF', title: '7C4A1E', accent: 'D4A373', text: '3D2C1E', muted: '8C7A68', head: 'Georgia',       body: 'Segoe UI', bar: 'rule',      cover: 'center' },
-            teal:     { name: 'Teal Tech',      bg: 'FFFFFF', title: '0F766E', accent: '14B8A6', text: '1F2937', muted: '6B7280', head: 'Segoe UI',      body: 'Segoe UI', bar: 'underline', cover: 'band'   },
-            crimson:  { name: 'Crimson Bold',   bg: 'FFFFFF', title: '9B1C1C', accent: 'DC2626', text: '1F2937', muted: '6B7280', head: 'Arial',         body: 'Arial',    bar: 'band',      cover: 'band'   },
-            graphite: { name: 'Graphite Amber', bg: '1F2937', title: 'FFFFFF', accent: 'F59E0B', text: 'E5E7EB', muted: '9CA3AF', head: 'Segoe UI',      body: 'Segoe UI', bar: 'side',      cover: 'split', dark: true },
-            mono:     { name: 'Minimal Mono',   bg: 'FFFFFF', title: '111111', accent: '111111', text: '333333', muted: '777777', head: 'Arial',         body: 'Arial',    bar: 'underline', cover: 'center' },
-            royal:    { name: 'Royal Purple',   bg: 'FFFFFF', title: '4C1D95', accent: '8B5CF6', text: '1F2937', muted: '6B7280', head: 'Calibri',       body: 'Calibri',  bar: 'side',      cover: 'split'  },
-            ocean:    { name: 'Ocean Breeze',   bg: 'F0F7FB', title: '0B3C5D', accent: '1D9BF0', text: '1E293B', muted: '64748B', head: 'Calibri',       body: 'Calibri',  bar: 'rule',      cover: 'band'   },
-            sunset:   { name: 'Sunset',         bg: 'FFF7ED', title: '9A3412', accent: 'F97316', text: '292524', muted: '78716C', head: 'Georgia',       body: 'Calibri',  bar: 'band',      cover: 'split'  },
-            academic: { name: 'Academic',       bg: 'FFFFFF', title: '000000', accent: '7F1D1D', text: '111111', muted: '555555', head: 'Times New Roman', body: 'Times New Roman', bar: 'rule', cover: 'center' },
-            forest:   { name: 'Forest Night',   bg: '0B2E22', title: 'ECFDF5', accent: '34D399', text: 'D1FAE5', muted: '86C5A8', head: 'Georgia',       body: 'Segoe UI', bar: 'rule',      cover: 'center', dark: true },
-            arctic:   { name: 'Arctic Slate',   bg: 'FFFFFF', title: '334155', accent: '64748B', text: '1E293B', muted: '94A3B8', head: 'Segoe UI Light', body: 'Segoe UI', bar: 'underline', cover: 'band'  },
-            solar:    { name: 'Solar Gold',     bg: 'FFFDF5', title: '1C1917', accent: 'EAB308', text: '292524', muted: '78716C', head: 'Calibri',       body: 'Calibri',  bar: 'side',      cover: 'band'   },
-            rose:     { name: 'Rose Quartz',    bg: 'FFF1F2', title: '881337', accent: 'E11D48', text: '3F3F46', muted: '71717A', head: 'Georgia',       body: 'Calibri',  bar: 'underline', cover: 'center' }
+            navy:     { name: 'Executive Navy', bg: 'FFFFFF', title: '1F3864', accent: '2E75B6', text: '262626', muted: '6B7280', head: 'Calibri Light', body: 'Calibri',  bar: 'band',      cover: 'split',  motif: 'circles' },
+            energy:   { name: 'Energy Green',   bg: 'FFFFFF', title: '0F5F3A', accent: '33A036', text: '1F2933', muted: '6B7280', head: 'Segoe UI',      body: 'Segoe UI', bar: 'side',      cover: 'split',  motif: 'blocks' },
+            midnight: { name: 'Midnight',       bg: '0F172A', title: 'F8FAFC', accent: '38BDF8', text: 'E2E8F0', muted: '94A3B8', head: 'Segoe UI',      body: 'Segoe UI', bar: 'rule',      cover: 'full',   motif: 'dots', dark: true },
+            sand:     { name: 'Desert Sand',    bg: 'FAF6EF', title: '7C4A1E', accent: 'C08A52', text: '3D2C1E', muted: '8C7A68', head: 'Georgia',       body: 'Segoe UI', bar: 'rule',      cover: 'center', motif: 'circles' },
+            teal:     { name: 'Teal Tech',      bg: 'FFFFFF', title: '0F766E', accent: '14B8A6', text: '1F2937', muted: '6B7280', head: 'Segoe UI',      body: 'Segoe UI', bar: 'underline', cover: 'band',   motif: 'dots' },
+            crimson:  { name: 'Crimson Bold',   bg: 'FFFFFF', title: '9B1C1C', accent: 'DC2626', text: '1F2937', muted: '6B7280', head: 'Arial',         body: 'Arial',    bar: 'band',      cover: 'full',   motif: 'stripes' },
+            graphite: { name: 'Graphite Amber', bg: '1F2937', title: 'FFFFFF', accent: 'F59E0B', text: 'E5E7EB', muted: '9CA3AF', head: 'Segoe UI',      body: 'Segoe UI', bar: 'side',      cover: 'split',  motif: 'stripes', dark: true },
+            mono:     { name: 'Minimal Mono',   bg: 'FFFFFF', title: '111111', accent: '111111', text: '333333', muted: '777777', head: 'Arial',         body: 'Arial',    bar: 'underline', cover: 'center', motif: 'none' },
+            royal:    { name: 'Royal Purple',   bg: 'FFFFFF', title: '4C1D95', accent: '8B5CF6', text: '1F2937', muted: '6B7280', head: 'Calibri',       body: 'Calibri',  bar: 'side',      cover: 'split',  motif: 'circles' },
+            ocean:    { name: 'Ocean Breeze',   bg: 'F0F7FB', title: '0B3C5D', accent: '1D9BF0', text: '1E293B', muted: '64748B', head: 'Calibri',       body: 'Calibri',  bar: 'rule',      cover: 'band',   motif: 'circles' },
+            sunset:   { name: 'Sunset',         bg: 'FFF7ED', title: '9A3412', accent: 'F97316', text: '292524', muted: '78716C', head: 'Georgia',       body: 'Calibri',  bar: 'band',      cover: 'split',  motif: 'circles' },
+            academic: { name: 'Academic',       bg: 'FFFFFF', title: '000000', accent: '7F1D1D', text: '111111', muted: '555555', head: 'Times New Roman', body: 'Times New Roman', bar: 'rule', cover: 'center', motif: 'none' },
+            forest:   { name: 'Forest Night',   bg: '0B2E22', title: 'ECFDF5', accent: '34D399', text: 'D1FAE5', muted: '86C5A8', head: 'Georgia',       body: 'Segoe UI', bar: 'rule',      cover: 'full',   motif: 'circles', dark: true },
+            arctic:   { name: 'Arctic Slate',   bg: 'FFFFFF', title: '334155', accent: '0EA5E9', text: '1E293B', muted: '94A3B8', head: 'Segoe UI Light', body: 'Segoe UI', bar: 'underline', cover: 'band', motif: 'blocks' },
+            solar:    { name: 'Solar Gold',     bg: 'FFFDF5', title: '1C1917', accent: 'EAB308', text: '292524', muted: '78716C', head: 'Calibri',       body: 'Calibri',  bar: 'side',      cover: 'full',   motif: 'blocks' },
+            rose:     { name: 'Rose Quartz',    bg: 'FFF1F2', title: '881337', accent: 'E11D48', text: '3F3F46', muted: '71717A', head: 'Georgia',       body: 'Calibri',  bar: 'underline', cover: 'center', motif: 'circles' }
         };
-
-        let PPTX_OPTS = { agenda: true, closing: true, closingText: 'Thank you', smart: 'auto', bullet: 'auto', theme: 'navy', ratio: '16:9', bodySize: 18, slideNumbers: true, footer: true, coverMeta: true, headFont: '', bodyFont: '' };
+        const PPTX_DEFAULTS = {
+            theme: 'navy', ratio: '16:9', density: 'standard',
+            titleStyle: 'theme', coverStyle: 'theme', cardStyle: 'soft', motif: 'theme',
+            smart: 'auto', icons: true, charts: true, vcenter: true, bullet: 'auto', transition: 'fade',
+            agenda: true, closing: true, closingText: 'Thank you', slideNumbers: true, footer: true, coverMeta: true,
+            headFont: '', bodyFont: ''
+        };
+        let PPTX_OPTS = Object.assign({}, PPTX_DEFAULTS);
         try { Object.assign(PPTX_OPTS, JSON.parse(localStorage.getItem('pptx_opts_v1') || '{}')); } catch (e) {}
+        delete PPTX_OPTS.bodySize;
+        let PPTX_LOGO = null;
+        try { PPTX_LOGO = JSON.parse(localStorage.getItem('pptx_logo_v1') || 'null'); } catch (e) {}
+        try { const ct = JSON.parse(localStorage.getItem('pptx_custom_theme_v1') || 'null'); if (ct) PPTX_THEMES.custom = ct; } catch (e) {}
         function savePptxOpts() { try { localStorage.setItem('pptx_opts_v1', JSON.stringify(PPTX_OPTS)); } catch (e) {} }
+
+        const PPTX_DENSITY = { large: 22, standard: 19, compact: 16 };
+        const PPTX_BULLETS = { auto: null, dot: '25CF', square: '25A0', arrow: '25B8', diamond: '25C6', check: '2713', pointer: '27A4', dash: '2013' };
+        const THEME_BULLET = { band: '25A0', side: '25B8', rule: '25CF', underline: '25C6', plain: '25CF' };
+
+        function pxMix(a, b, t) {   // t = share of a
+            const p = h => [0, 2, 4].map(i => parseInt(String(h).substr(i, 2), 16) || 0);
+            const A = p(a), B = p(b);
+            return A.map((v, i) => Math.round(v * t + B[i] * (1 - t)).toString(16).padStart(2, '0')).join('').toUpperCase();
+        }
+        function pxLum(h) { const v = [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16) / 255); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }
+
+        function getDeckTheme(O) {
+            const th = Object.assign({}, PPTX_THEMES[O.theme] || PPTX_THEMES.navy);
+            if (O.titleStyle && O.titleStyle !== 'theme') th.bar = O.titleStyle;
+            if (O.coverStyle && O.coverStyle !== 'theme') th.cover = O.coverStyle;
+            if (O.motif && O.motif !== 'theme') th.motif = O.motif;
+            th.motif = th.motif || 'circles';
+            th.head = O.headFont || th.head;
+            th.body = O.bodyFont || th.body;
+            th.strong = th.dark ? th.accent : th.title;
+            th.onStrong = pxLum(th.strong) > 0.6 ? (th.dark ? th.bg : '111111') : 'FFFFFF';
+            th.soft = th.dark ? pxMix(th.accent, th.bg, 0.16) : pxMix(th.accent, 'FFFFFF', 0.10);
+            th.soft2 = th.dark ? pxMix(th.accent, th.bg, 0.30) : pxMix(th.accent, 'FFFFFF', 0.25);
+            th.alt = th.dark ? pxMix(th.accent, th.bg, 0.6) : th.accent;
+            th.line = th.dark ? pxMix(th.text, th.bg, 0.22) : 'D9DDE3';
+            th.palette = (th.palette && th.palette.length) ? th.palette
+                : (th.dark ? [th.accent, th.title, th.alt, th.muted, pxMix(th.accent, th.title, 0.5), pxMix(th.accent, th.bg, 0.4)]
+                        : [th.strong, th.accent, pxMix(th.strong, th.bg, 0.55), pxMix(th.accent, th.bg, 0.5), th.muted, pxMix(th.strong, th.accent, 0.5)]);
+            return th;
+        }
+        function deckFonts(O) {
+            const B = PPTX_DENSITY[O.density] || 19;
+            return { title: B >= 22 ? 34 : B >= 19 ? 30 : 27, body: B, head: B + 1, desc: Math.max(13, B - 3), small: Math.max(11, B - 6) };
+        }
+
+        // ---------- text measuring ----------
+        const LH = fs => fs * 1.24 / 72;
+        let FONT_K = 0.55;   // average glyph width / font size; set per deck (serif fonts run wider)
+        function nLines(text, w, fs) {
+            const c = String(text || '').replace(/\*\*|__|[*_`$]/g, '');
+            const cpl = Math.max(6, Math.floor(w * 72 / (fs * FONT_K)));
+            return c.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / cpl)), 0);
+        }
+        function textH(text, w, fs) { return nLines(text, w, fs) * LH(fs); }
+
+        // ---------- icons (24×24 line icons, drawn here, rendered to PNG at export) ----------
+        const PPTX_ICONS = {
+            bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+            money: '<circle cx="12" cy="12" r="9"/><path d="M15 9.2c-.6-.8-1.7-1.2-3-1.2-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.3 0-2.4-.4-3-1.2M12 6v2M12 16v2"/>',
+            clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+            check: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9"/>',
+            users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.6 3.2-6 6.5-6s6 2.4 6.5 6M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2 .7 3.3 2.9 3.5 5.7"/>',
+            leaf: '<path d="M5 19C5 10.5 10 5.5 20 4c-.8 9.5-6 15-15 15z"/><path d="M5 19l8.5-8.5"/>',
+            gauge: '<path d="M3.5 16.5a8.5 8.5 0 1 1 17 0"/><path d="M12 16.5l4.2-5.2"/><circle cx="12" cy="16.5" r="1.3"/>',
+            shield: '<path d="M12 3l8 3v6c0 4.8-3.4 8-8 9-4.6-1-8-4.2-8-9V6z"/><path d="M8.8 12.2l2.2 2.2 4.3-4.4"/>',
+            chart: '<path d="M4 4v16h16"/><path d="M8.5 16v-4M12.5 16V8M16.5 16v-6.5"/>',
+            gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.8"/>',
+            building: '<path d="M4 21V5.5L12 3v18M12 21V9l8 2.5V21M2 21h20M7.5 8h1.5M7.5 12h1.5M7.5 16h1.5M15.5 14h1.5M15.5 17.5h1.5"/>',
+            drop: '<path d="M12 3c4 5 6.5 8.2 6.5 11.3a6.5 6.5 0 0 1-13 0C5.5 11.2 8 8 12 3z"/>',
+            sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
+            thermo: '<path d="M10 14.2V5a2 2 0 0 1 4 0v9.2a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>',
+            target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3"/>',
+            bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.8 10.6c.7.7 1 1.5 1 2.4h5.6c0-.9.3-1.7 1-2.4A6 6 0 0 0 12 3z"/>',
+            doc: '<path d="M6 2.5h8.5L19 7v14.5H6z"/><path d="M14 2.5V7.5h5M9 12.5h7M9 16.5h5"/>',
+            flag: '<path d="M5 21V3.5"/><path d="M5 4h12.5l-2.5 4.2 2.5 4.3H5"/>',
+            search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/>',
+            alert: '<path d="M12 3.5L2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/>',
+            factory: '<path d="M2.5 21V10.5l5.5 3.5v-3.5l5.5 3.5V6h7.5v15zM2.5 21h19"/>',
+            plug: '<path d="M9 2.5v5M15 2.5v5M6 7.5h12V11a6 6 0 0 1-12 0zM12 17v4.5"/>',
+            wrench: '<path d="M14.6 6.4a4.2 4.2 0 0 0-5.6 5.4L3 17.8 6.2 21l6-6a4.2 4.2 0 0 0 5.4-5.6l-2.8 2.8-2.6-.6-.6-2.6z"/>',
+            globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.6 3 14.4 0 18M12 3c-3 3.6-3 14.4 0 18"/>',
+            rocket: '<path d="M12.5 15L9 11.5C10.3 6 14 3 21 3c0 7-3 10.7-8.5 12z"/><path d="M9 11.5L5 12l2.5-4.5h4M12.5 15l-.5 4 4.5-2.5v-4"/><path d="M4.5 19.5c.5-2 1.5-3 3-3.5"/>',
+            calendar: '<rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+            trend: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+            image: '<rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="1.7"/><path d="M21 16l-5-5-8 8.5"/>',
+            cloud: '<path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.5 1.5 4 4 0 0 1-.4 7.5z"/>',
+            star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+            book: '<path d="M4 4.5h6a2 2 0 0 1 2 2V20a2 2 0 0 0-2-2H4zM20 4.5h-6a2 2 0 0 0-2 2V20a2 2 0 0 1 2-2h6z"/>',
+            truck: '<path d="M2.5 6h11v10h-11zM13.5 9.5h4l3.5 3.5v3h-7.5"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+            lock: '<rect x="5" y="10.5" width="14" height="10.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+            handshake: '<path d="M2.5 9l4-3.5 5 2 3-1.5L21.5 9v5l-4 3.5-6.5-4.5M2.5 9v5.5l6 4.5 3.5-2.5"/><path d="M11.5 7.5l-3 3 2 1.5 3-2"/>'
+        };
+        const PPTX_ICON_WORDS = [
+            ['bolt', /energ|power|electric|\bkw|kwh|demand|load|voltage|mw\b/i],
+            ['money', /cost|saving|budget|price|tariff|roi|payback|financ|money|\bsar\b|invest|\$|revenue|capex|opex/i],
+            ['leaf', /carbon|sustain|esg|green|environment|emission|scope\s*[123]|net.?zero|co2|climate/i],
+            ['thermo', /hvac|temperatur|heat|thermal|ahu|boiler/i],
+            ['drop', /water|chill|cool|fluid|leak/i],
+            ['sun', /solar|renewable|\bpv\b|daylight|photovolt/i],
+            ['bulb', /idea|lighting|\blight|\bled\b|innovat|insight/i],
+            ['plug', /meter|metering|electrical|wiring|socket/i],
+            ['users', /staff|people|team|behaviou?r|train|stakeholder|occupant|employee|customer|user/i],
+            ['shield', /safety|risk|reliab|secur|hse|protect|hazard/i],
+            ['check', /complian|approv|verif|done|quality|standard|iso\s?\d|certif|requirement/i],
+            ['gauge', /perform|efficien|kpi|benchmark|metric|speed|capacity/i],
+            ['clock', /time|schedul|hour|duration|deadline|quick|fast|minute/i],
+            ['calendar', /plan|roadmap|calendar|month|week|year|quarter|annual/i],
+            ['chart', /data|analy|report|result|measure|statistic|dashboard/i],
+            ['trend', /growth|increase|reduc|improv|trend|forecast/i],
+            ['gear', /maintenan|operat|control|process|system|optimi|automat|bms|scada/i],
+            ['wrench', /retrofit|repair|install|upgrade|fix|tool/i],
+            ['building', /building|site|facilit|office|campus|hospital|mall|tower/i],
+            ['factory', /plant|industr|manufactur|factory|refiner|production/i],
+            ['doc', /document|policy|procedur|audit|record|contract|regulat|law/i],
+            ['search', /inspect|survey|find|review|discover|investigat|walk.?through/i],
+            ['flag', /milestone|phase|start|launch|kick.?off|goal/i],
+            ['target', /target|objective|aim|focus|priority/i],
+            ['globe', /global|world|market|countr|international|region/i],
+            ['rocket', /scale|accelerat|transform|future|next/i],
+            ['truck', /logist|transport|fleet|vehicle|supply/i],
+            ['lock', /privacy|access|password|cyber/i],
+            ['handshake', /partner|agreement|collaborat|vendor|supplier|contractor/i],
+            ['book', /learn|course|knowledge|guide|lesson/i],
+            ['star', /best|key|highlight|excellen|award/i]
+        ];
+        const PPTX_ICON_FALLBACK = ['target', 'check', 'chart', 'bulb', 'star', 'flag'];
+        function pickIcon(text, k, explicit) {
+            if (explicit && explicit[k] && PPTX_ICONS[explicit[k]]) return explicit[k];
+            const term = (text.match(/^\*\*(.+?)\*\*/) || text.match(/^([^:]{2,40}):/) || [])[1];
+            if (term) for (const [name, re] of PPTX_ICON_WORDS) if (re.test(term)) return name;
+            for (const [name, re] of PPTX_ICON_WORDS) if (re.test(text)) return name;
+            return PPTX_ICON_FALLBACK[k % PPTX_ICON_FALLBACK.length];
+        }
+        const ICON_CACHE = new Map();
+        async function renderIcon(name, color) {
+            if (typeof document === 'undefined' || !PPTX_ICONS[name]) return null;
+            const key = name + color;
+            if (ICON_CACHE.has(key)) return ICON_CACHE.get(key);
+            const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 24 24" fill="none" stroke="#' + color
+                + '" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + PPTX_ICONS[name] + '</svg>';
+            const p = new Promise(res => {
+                const img = new Image();
+                img.onload = () => {
+                    const c = document.createElement('canvas'); c.width = c.height = 192;
+                    c.getContext('2d').drawImage(img, 0, 0, 192, 192);
+                    res(c.toDataURL('image/png').split(',')[1]);
+                };
+                img.onerror = () => res(null);
+                img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+            });
+            ICON_CACHE.set(key, p);
+            return p;
+        }
+        async function iconBadge(pptx, s, name, x, y, d, fill, stroke, shape) {
+            const R = pptx.ShapeType;
+            s.addShape(shape === 'square' ? R.roundRect : R.ellipse, { x, y, w: d, h: d, fill: { color: fill }, line: { color: fill }, rectRadius: 0.12 });
+            const png = await renderIcon(name, stroke);
+            if (png) s.addImage({ data: 'image/png;base64,' + png, x: x + d * 0.22, y: y + d * 0.22, w: d * 0.56, h: d * 0.56 });
+        }
+
+        // ---------- images ----------
+        async function loadDeckImage(src) {
+            if (!src) return null;
+            try {
+                let dataUrl = src;
+                if (!/^data:/.test(src)) {
+                    const r = await fetch(src, { mode: 'cors' });
+                    if (!r.ok) return null;
+                    const blob = await r.blob();
+                    dataUrl = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => res(null); fr.readAsDataURL(blob); });
+                    if (!dataUrl) return null;
+                }
+                if (typeof Image === 'undefined') return null;
+                const dims = await new Promise(res => { const im = new Image(); im.onload = () => res({ w: im.naturalWidth, h: im.naturalHeight }); im.onerror = () => res(null); im.src = dataUrl; });
+                if (!dims) return null;
+                return { data: dataUrl.replace(/^data:/, ''), width: dims.w, height: dims.h };
+            } catch (e) { return null; }
+        }
+        function fitBox(imgW, imgH, x, y, w, h) {
+            const r = Math.min(w / imgW, h / imgH);
+            const iw = imgW * r, ih = imgH * r;
+            return { x: x + (w - iw) / 2, y: y + (h - ih) / 2, w: iw, h: ih };
+        }
+        async function pptxMathImage(latex, color) {
+            if (typeof document === 'undefined' || typeof katex === 'undefined') return null;
+            const div = document.createElement('div');
+            div.style.cssText = 'position:absolute;left:-20000px;top:0;padding:12px 18px;background:transparent;display:inline-block;font-size:34px;color:#' + color + ';';
+            document.body.appendChild(div);
+            try {
+                katex.render(latex, div, { displayMode: true, throwOnError: false });
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+                const canvas = await html2canvas(div, { backgroundColor: null, scale: 3 });
+                return { base64: canvas.toDataURL('image/png').split(',')[1], width: div.offsetWidth, height: div.offsetHeight };
+            } catch (e) { return null; } finally { div.remove(); }
+        }
 
         // ---------- parsing ----------
         function pptxParse(md) {
             const lines = forSlides(md).split(/\r?\n/);
             const slides = [];
-            let pendingLayout = '';
+            let pendingLayout = '', pendingChart = '', pendingIcons = null;
             let cover = null, cur = null, h2 = '';
             const newSlide = (title, kicker) => { cur = { kind: 'content', title, kicker: kicker || '', blocks: [], notes: '' }; slides.push(cur); };
-            const add = b => { if (!cur) newSlide('', ''); if (pendingLayout) { b.layout = pendingLayout; pendingLayout = ''; } cur.blocks.push(b); };
+            const add = b => { if (!cur) newSlide('', ''); if (pendingLayout) { b.layout = pendingLayout; pendingLayout = ''; }
+                if (pendingChart && b.t === 'table') { b.chart = pendingChart; pendingChart = ''; }
+                if (pendingIcons && b.t === 'bullets') { b.icons = pendingIcons; pendingIcons = null; }
+                cur.blocks.push(b); };
 
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i], t = line.trim();
@@ -4713,7 +5000,9 @@ FINISH WITH
                     const d = m[1];
                     let k;
                     if ((k = d.match(/^layout\s*:\s*([\w-]+)/i))) pendingLayout = k[1].toLowerCase();
-                    else if ((k = d.match(/^notes?\s*:\s*([\s\S]+)/i))) { if (!cur) newSlide('', ''); cur.notes += (cur.notes ? '\n' : '') + k[1]; }
+                    else if ((k = d.match(/^chart\s*:\s*([\w-]+)/i))) pendingChart = k[1].toLowerCase();
+                    else if ((k = d.match(/^icons?\s*:\s*(.+)/i))) pendingIcons = k[1].split(/[,\s]+/).map(x => x.trim().toLowerCase()).filter(Boolean);
+                    else if ((k = d.match(/^notes?\s*:\s*([\s\S]+)/i))) { if (!cur && cover) { cover.notes = (cover.notes ? cover.notes + '\n' : '') + k[1]; continue; } if (!cur) newSlide('', ''); cur.notes += (cur.notes ? '\n' : '') + k[1]; }
                     else if (/^slide$/i.test(d) && cur && cur.blocks.length) newSlide(cur.title, cur.kicker);
                     continue;
                 }
@@ -4773,6 +5062,7 @@ FINISH WITH
                     add({ t: 'quote', text: buf.filter(Boolean).join(' ') });
                     continue;
                 }
+                if ((m = t.match(/^!\[([^\]]*)\]\(([^)\s]*)[^)]*\)\s*$/))) { add({ t: 'image', alt: m[1], src: m[2] }); continue; }
                 const text = t.replace(/^::indent:\d+::\s*/, '');
                 if (cover && !cur && !cover.sub) { cover.sub = text; continue; }
                 if (!cur && cover) { cover.sub += ' ' + text; continue; }
@@ -4810,23 +5100,8 @@ FINISH WITH
         }
 
 
-        // ===== SMART LAYOUTS (SmartArt-style) =====
-        // A bullet list is turned into a visual layout when its shape suits one:
-        //   ordered, short steps        -> process chevrons
-        //   ordered, longer steps       -> numbered vertical steps
-        //   "2024: ..." / "Q1: ..."      -> timeline
-        //   "**Term**: description"      -> cards with a heading
-        //   2-4 parents with sub-bullets -> columns
-        //   2-6 short points             -> numbered tiles
-        // Anything else stays a bullet list, with theme-matched markers.
-        const PPTX_BULLETS = { auto: null, dot: '25CF', square: '25A0', arrow: '25B8', diamond: '25C6', check: '2713', pointer: '27A4', dash: '2013' };
-        const THEME_BULLET = { band: '25A0', side: '25B8', rule: '25CF', underline: '25C6' };
 
-        function pxMix(a, b, t) {   // t = share of a
-            const p = h => [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16));
-            const A = p(a), B = p(b);
-            return A.map((v, i) => Math.round(v * t + B[i] * (1 - t)).toString(16).padStart(2, '0')).join('').toUpperCase();
-        }
+        // ===== SMART LAYOUTS (SmartArt-style) =====
         function splitTerm(text) {
             let m = text.match(/^\*\*(.+?)\*\*\s*[:—–-]?\s*(.*)$/);
             if (m) return { term: m[1].replace(/:$/, ''), desc: m[2] };
@@ -4834,408 +5109,799 @@ FINISH WITH
             if (m) return { term: m[1], desc: m[2] };
             return null;
         }
+        const SMART_KINDS = ['cards', 'tiles', 'process', 'steps', 'timeline', 'columns', 'stats', 'icons'];
+        const STAT_RE = /^\*\*(?:[~≈<>+\-$€£]|SAR|USD|EUR)?\s?[\d][\d.,]*\s?[^*\s][^*]{0,11}\*\*|^\*\*(?:[~≈<>+\-$€£]|SAR|USD|EUR)?\s?[\d][\d.,]*\s?%?\*\*/i;
         function smartKind(b) {
             if (b.t !== 'bullets') return null;
-            const VALID = ['cards', 'tiles', 'process', 'steps', 'timeline', 'columns', 'stats'];
-            if (b.layout) return VALID.includes(b.layout) ? b.layout : null;
+            if (b.layout) return SMART_KINDS.includes(b.layout) ? b.layout : null;
             if (PPTX_OPTS.smart === 'off') return null;
             const top = b.items.filter(i => i.level === 0);
             const kids = b.items.length - top.length;
             const len = s => s.replace(/[*_`$]/g, '').length;
             if (kids && top.length >= 2 && top.length <= 4 && b.items[0].level === 0
-                && top.every(t => len(t.text) <= 40) && b.items.length <= 16) return 'columns';
+                && top.every(t => len(t.text) <= 40) && b.items.length <= 18) return 'columns';
             if (kids) return null;
             const n = top.length;
             if (n < 2 || n > 6) return null;
-            if (top.filter(i => /^(\*\*)?((19|20)\d\d|Q[1-4]|H[12]|Phase\s*\d+|Stage\s*\d+|Week\s*\d+|Day\s*\d+|Month\s*\d+)\b/i.test(i.text)).length === n) return 'timeline';
-            if (top.every(i => /^\*\*[~≈<>+\-$€£]?[\d.,]+\s?[%xX×kKmMbB]?\w{0,6}\*\*/.test(i.text))) return 'stats';
+            if (top.every(i => STAT_RE.test(i.text))) return 'stats';
+            if (top.filter(i => /^(\*\*)?((19|20)\d\d|Q[1-4]|H[12]|Phase\s*\d+|Stage\s*\d+|Step\s*\d+|Week\s*\d+|Day\s*\d+|Month\s*\d+|Year\s*\d+)\b/i.test(i.text)).length === n) return 'timeline';
             if (top.every(i => i.ordered)) return (n <= 5 && top.every(i => len(i.text) <= 45)) ? 'process' : 'steps';
             if (top.filter(i => splitTerm(i.text)).length >= Math.ceil(n * 0.6)) return 'cards';
-            if (top.every(i => len(i.text) <= 90)) return 'tiles';
+            if (!b._narrow && top.every(i => len(i.text) <= 90)) return 'icons';
             return null;
         }
-        function smartH(kind, b) {
-            const n = b.items.filter(i => i.level === 0).length;
-            const rows = Math.ceil(n / (n <= 3 ? n : n === 4 ? 2 : 3));
-            return Math.min(4.9, { cards: rows * 1.9, tiles: rows * 1.5, process: 2.7, steps: n * 0.78,
-                                   timeline: 2.6, columns: 3.4, stats: rows * 2.0 }[kind] || 3);
+
+        function cardBox(pptx, s, th, O, x, y, w, h, k) {
+            const R = pptx.ShapeType, st = O.cardStyle;
+            const alt = k % 2 ? th.alt : th.strong;
+            if (st === 'outline') {
+                s.addShape(R.roundRect, { x, y, w, h, fill: { color: th.bg }, line: { color: th.soft2, width: 1.25 }, rectRadius: 0.1 });
+                return { head: th.title, text: th.text, badge: alt, onBadge: th.onStrong };
+            }
+            if (st === 'solid') {
+                s.addShape(R.roundRect, { x, y, w, h, fill: { color: alt }, line: { color: alt }, rectRadius: 0.1 });
+                const on = pxLum(alt) > 0.6 ? '111111' : 'FFFFFF';
+                return { head: on, text: on, badge: on, onBadge: alt };
+            }
+            if (st === 'shadow') {
+                const f = th.dark ? pxMix(th.text, th.bg, 0.08) : 'FFFFFF';
+                s.addShape(R.roundRect, { x, y, w, h, fill: { color: f }, line: { color: th.dark ? pxMix(th.text, th.bg, 0.14) : 'ECEFF3', width: 0.75 }, rectRadius: 0.1,
+                    shadow: { type: 'outer', blur: 10, offset: 3, angle: 90, color: '000000', opacity: th.dark ? 0.45 : 0.14 } });
+                return { head: th.title, text: th.text, badge: alt, onBadge: th.onStrong };
+            }
+            s.addShape(R.roundRect, { x, y, w, h, fill: { color: th.soft }, line: { color: th.soft }, rectRadius: 0.1 });
+            s.addShape(R.rect, { x, y: y + 0.18, w: 0.07, h: h - 0.36, fill: { color: alt }, line: { color: alt } });
+            return { head: th.title, text: th.text, badge: alt, onBadge: th.onStrong };
         }
 
-        function drawSmart(pptx, s, th, b, kind, x, y, w, h, O) {
-            const body = PPTX_OPTS.bodyFont || th.body;
-            const head = PPTX_OPTS.headFont || th.head;
+        // Each layout returns { h, draw: async (pptx, s, x, y) }
+        function smartLayout(kind, b, w, th, O, F) {
             const top = b.items.filter(i => i.level === 0);
             const n = top.length;
-            const soft = th.dark ? pxMix(th.accent, th.bg, 0.16) : pxMix(th.accent, 'FFFFFF', 0.10);
-            const strong = th.dark ? th.accent : th.title;
-            const onStrong = th.dark ? th.bg : 'FFFFFF';
-            const fsT = Math.max(12, O.bodySize - 2), fsD = Math.max(12, O.bodySize - 3);
-            const R = pptx.ShapeType;
-            const runs = (t, o) => pptxRuns(t, Object.assign({ fontFace: body, color: th.text, fontSize: fsD, boldColor: th.title }, o || {}), th);
-            const clean = t => t.replace(/^\*\*(.+?)\*\*/, '$1');
+            const runs = (t, o) => pptxRuns(t, Object.assign({ fontFace: th.body, color: th.text, fontSize: F.desc, boldColor: th.title }, o || {}), th);
+            const clean = t => t.replace(/^\*\*(.+?)\*\*/, '$1').replace(/[*_`]/g, '');
+            const icons = O.icons;
+            const R = () => null;
+
+            if (kind === 'cards' || kind === 'icons') {
+                const short = top.every(i => (splitTerm(i.text) || { desc: i.text }).desc.length <= 70);
+                const cols = n <= 3 ? n : (n === 4 ? (short ? 4 : 2) : 3);
+                const rows = Math.ceil(n / cols), g = 0.3;
+                const cw = (w - g * (cols - 1)) / cols;
+                const ic = icons ? 0.66 : 0;
+                const items = top.map((it, k) => {
+                    const tm = kind === 'cards' ? (splitTerm(it.text) || { term: clean(it.text), desc: '' }) : { term: '', desc: it.text };
+                    return { tm, icon: pickIcon(it.text, k, b.icons) };
+                });
+                const vertical = cols >= 3 || kind === 'icons';   // icon on top
+                const innerW = cw - 0.6;
+                const itemH = items.map(({ tm }) => {
+                    const headH = tm.term ? textH(tm.term, vertical ? innerW : innerW - ic - 0.2, F.head) : 0;
+                    const descH = tm.desc ? textH(tm.desc, innerW, kind === 'icons' ? F.body - 1 : F.desc) : 0;
+                    return vertical ? 0.32 + (ic ? ic + 0.22 : 0) + headH + (tm.term && tm.desc ? 0.12 : 0) + descH + 0.34
+                                    : 0.3 + Math.max(ic, headH) + (tm.desc ? 0.14 + descH : 0) + 0.32;
+                });
+                const rowH = [];
+                for (let r = 0; r < rows; r++) rowH.push(Math.max(...itemH.slice(r * cols, r * cols + cols)));
+                const h = rowH.reduce((a, v) => a + v, 0) + g * (rows - 1);
+                return { h, draw: async (pptx, s, x, y) => {
+                    for (let k = 0; k < n; k++) {
+                        const r = Math.floor(k / cols), c = k % cols;
+                        const inRow = Math.min(cols, n - r * cols);
+                        const off = (cols - inRow) * (cw + g) / 2;
+                        const cx = x + off + c * (cw + g), cy = y + rowH.slice(0, r).reduce((a, v) => a + v, 0) + g * r, ch = rowH[r];
+                        const col = cardBox(pptx, s, th, O, cx, cy, cw, ch, k);
+                        const { tm, icon } = items[k];
+                        let ty = cy + 0.3;
+                        if (vertical) {
+                            if (ic) { await iconBadge(pptx, s, icon, cx + 0.3, ty, ic, col.badge, col.onBadge, O.cardStyle === 'outline' ? 'square' : 'circle'); ty += ic + 0.22; }
+                            if (tm.term) { const hh = textH(tm.term, innerW, F.head); s.addText(tm.term, { x: cx + 0.3, y: ty, w: innerW, h: hh, fontFace: th.head, fontSize: F.head, bold: true, color: col.head, valign: 'top', margin: 0 }); ty += hh + 0.12; }
+                            if (tm.desc) s.addText(runs(tm.desc, { color: col.text, fontSize: kind === 'icons' ? F.body - 1 : F.desc, boldColor: col.head }), { x: cx + 0.3, y: ty, w: innerW, h: Math.max(0.3, cy + ch - ty - 0.25), valign: 'top', margin: 0 });
+                        } else {
+                            const hx = cx + 0.3 + (ic ? ic + 0.2 : 0), hw = innerW - (ic ? ic + 0.2 : 0);
+                            if (ic) await iconBadge(pptx, s, icon, cx + 0.3, ty, ic, col.badge, col.onBadge, O.cardStyle === 'outline' ? 'square' : 'circle');
+                            const hh = Math.max(ic, textH(tm.term, hw, F.head));
+                            s.addText(tm.term, { x: hx, y: ty, w: hw, h: hh, fontFace: th.head, fontSize: F.head, bold: true, color: col.head, valign: 'middle', margin: 0 });
+                            ty += hh + 0.14;
+                            if (tm.desc) s.addText(runs(tm.desc, { color: col.text, boldColor: col.head }), { x: cx + 0.3, y: ty, w: innerW, h: Math.max(0.3, cy + ch - ty - 0.25), valign: 'top', margin: 0 });
+                        }
+                    }
+                } };
+            }
+
+            if (kind === 'process') {
+                const g = 0.1, cw = (w - g * (n - 1)) / n, chH = 0.9;
+                const items = top.map(it => splitTerm(it.text) || { term: clean(it.text), desc: '' });
+                const below = Math.max(...items.map(t => textH(t.term, cw - 0.25, F.head) + (t.desc ? 0.1 + textH(t.desc, cw - 0.25, F.desc) : 0)));
+                return { h: chH + 0.3 + below, draw: async (pptx, s, x, y) => {
+                    items.forEach((t, k) => {
+                        const cx = x + k * (cw + g), fill = k % 2 ? th.alt : th.strong;
+                        s.addText(String(k + 1).padStart(2, '0'), { shape: k ? pptx.ShapeType.chevron : pptx.ShapeType.homePlate, x: cx, y, w: cw, h: chH,
+                            fill: { color: fill }, line: { color: fill }, color: pxLum(fill) > 0.6 ? '111111' : 'FFFFFF', fontFace: th.head, fontSize: 22, bold: true, align: 'center', valign: 'middle' });
+                        const hh = textH(t.term, cw - 0.25, F.head);
+                        s.addText(t.term, { x: cx + 0.08, y: y + chH + 0.3, w: cw - 0.25, h: hh, fontFace: th.head, fontSize: F.head, bold: true, color: th.title, valign: 'top', margin: 0 });
+                        if (t.desc) s.addText(runs(t.desc), { x: cx + 0.08, y: y + chH + 0.4 + hh, w: cw - 0.25, h: textH(t.desc, cw - 0.25, F.desc) + 0.1, valign: 'top', margin: 0 });
+                    });
+                } };
+            }
+
+            if (kind === 'steps') {
+                const d = 0.62, tw = w - d - 0.35, fs = F.body;
+                const rh = top.map(it => Math.max(d, textH(it.text, tw, fs)) + 0.28);
+                return { h: rh.reduce((a, v) => a + v, 0) - 0.28, draw: async (pptx, s, x, y) => {
+                    let cy = y;
+                    if (n > 1) s.addShape(pptx.ShapeType.line, { x: x + d / 2, y: y + d / 2, w: 0, h: rh.slice(0, -1).reduce((a, v) => a + v, 0), line: { color: th.accent, width: 2, dashType: 'dash' } });
+                    top.forEach((it, k) => {
+                        s.addText(String(k + 1), { shape: pptx.ShapeType.ellipse, x, y: cy, w: d, h: d, fill: { color: th.strong }, line: { color: th.bg, width: 3 },
+                            color: th.onStrong, fontFace: th.head, fontSize: 18, bold: true, align: 'center', valign: 'middle', margin: 0 });
+                        s.addText(runs(it.text, { fontSize: fs }), { x: x + d + 0.35, y: cy, w: tw, h: Math.max(d, textH(it.text, tw, fs)), valign: 'middle', margin: 0 });
+                        cy += rh[k];
+                    });
+                } };
+            }
+
+            if (kind === 'timeline') {
+                const seg = w / n;
+                const items = top.map(it => { const tm = splitTerm(it.text); return tm ? tm : { term: clean(it.text).split(/\s+/).slice(0, 2).join(' '), desc: clean(it.text).split(/\s+/).slice(2).join(' ') }; });
+                const lab = Math.max(...items.map(t => textH(t.term, seg - 0.2, F.head + 2)));
+                const desc = Math.max(...items.map(t => t.desc ? textH(t.desc, seg - 0.3, F.desc) : 0));
+                const ly = lab + 0.35;
+                return { h: ly + 0.45 + desc, draw: async (pptx, s, x, y) => {
+                    s.addShape(pptx.ShapeType.line, { x, y: y + ly, w, h: 0, line: { color: th.soft2, width: 4 } });
+                    items.forEach((t, k) => {
+                        const cx = x + seg * k + seg / 2, fill = k % 2 ? th.alt : th.strong;
+                        s.addShape(pptx.ShapeType.ellipse, { x: cx - 0.2, y: y + ly - 0.2, w: 0.4, h: 0.4, fill: { color: fill }, line: { color: th.bg, width: 3 } });
+                        s.addText(t.term, { x: cx - seg / 2 + 0.1, y, w: seg - 0.2, h: lab, fontFace: th.head, fontSize: F.head + 2, bold: true, color: k % 2 ? (th.dark ? th.title : th.accent) : th.title, align: 'center', valign: 'bottom', margin: 0 });
+                        if (t.desc) s.addText(runs(t.desc), { x: cx - seg / 2 + 0.15, y: y + ly + 0.4, w: seg - 0.3, h: desc + 0.05, align: 'center', valign: 'top', margin: 0 });
+                    });
+                } };
+            }
+
+            if (kind === 'columns') {
+                const groups = [];
+                b.items.forEach(it => { if (it.level === 0) groups.push({ head: it.text, kids: [] }); else if (groups.length) groups[groups.length - 1].kids.push(it); });
+                const g = 0.3, cw = (w - g * (groups.length - 1)) / groups.length, hh = 0.8;
+                const listH = gr => gr.kids.reduce((a, it) => a + textH(it.text, cw - 0.75, F.desc) + 0.14, 0);
+                const body = Math.max(...groups.map(listH)) + 0.45;
+                return { h: hh + body, draw: async (pptx, s, x, y) => {
+                    for (let k = 0; k < groups.length; k++) {
+                        const gr = groups[k], cx = x + k * (cw + g), fill = k % 2 ? th.alt : th.strong;
+                        const on = pxLum(fill) > 0.6 ? '111111' : 'FFFFFF';
+                        s.addShape(pptx.ShapeType.rect, { x: cx, y: y + hh, w: cw, h: body, fill: { color: th.soft }, line: { color: th.soft } });
+                        s.addShape(pptx.ShapeType.rect, { x: cx, y, w: cw, h: hh, fill: { color: fill }, line: { color: fill } });
+                        let tx = cx + 0.2;
+                        if (O.icons) { await iconBadge(pptx, s, pickIcon(gr.head, k, b.icons), cx + 0.18, y + 0.14, 0.52, fill, on); tx = cx + 0.8; }
+                        s.addText(clean(gr.head), { x: tx, y, w: cx + cw - tx - 0.15, h: hh, color: on, fontFace: th.head, fontSize: F.head, bold: true, valign: 'middle', fit: 'shrink', margin: 0 });
+                        const paras = [];
+                        gr.kids.forEach(it => {
+                            const r = runs(it.text);
+                            r.forEach((q, j) => { if (j === 0) Object.assign(q.options, { bullet: { code: '25B8', color: fill }, indentLevel: Math.max(0, it.level - 1), paraSpaceAfter: 8 }); if (j === r.length - 1) q.options.breakLine = true; });
+                            paras.push(...r);
+                        });
+                        if (paras.length) s.addText(paras, { x: cx + 0.2, y: y + hh + 0.22, w: cw - 0.4, h: body - 0.35, valign: 'top', margin: 0 });
+                    }
+                } };
+            }
 
             if (kind === 'stats') {
                 const cols = n <= 4 ? n : 3, rows = Math.ceil(n / cols), g = 0.3;
-                const cw = (w - g * (cols - 1)) / cols, ch = Math.min((h - g * (rows - 1)) / rows, 2.1);
-                top.forEach((it, k) => {
-                    const cx = x + (k % cols) * (cw + g), cy = y + Math.floor(k / cols) * (ch + g);
-                    const m = it.text.match(/^\*\*(.+?)\*\*\s*[:\u2014\u2013-]?\s*(.*)$/) || [0, it.text.split(/\s+/)[0], it.text.split(/\s+/).slice(1).join(' ')];
-                    s.addShape(R.rect, { x: cx, y: cy, w: cw, h: ch, fill: { color: soft }, line: { color: soft } });
-                    s.addShape(R.rect, { x: cx, y: cy + ch - 0.07, w: cw, h: 0.07, fill: { color: k % 2 ? th.accent : strong }, line: { width: 0 } });
-                    s.addText(m[1], { x: cx + 0.15, y: cy + 0.15, w: cw - 0.3, h: ch * 0.5, fontFace: head, fontSize: 40, bold: true,
-                        color: k % 2 ? th.accent : th.title, align: 'center', valign: 'bottom', fit: 'shrink', margin: 0 });
-                    s.addText(runs(m[2]), { x: cx + 0.2, y: cy + ch * 0.52 + 0.05, w: cw - 0.4, h: ch * 0.45 - 0.2,
-                        align: 'center', valign: 'top', fit: 'shrink', margin: 0 });
-                });
-            } else if (kind === 'cards' || kind === 'tiles') {
-                const cols = n <= 3 ? n : n === 4 ? 2 : 3, rows = Math.ceil(n / cols), g = 0.25;
-                const cw = (w - g * (cols - 1)) / cols, ch = Math.min((h - g * (rows - 1)) / rows, kind === 'cards' ? 1.75 : 1.4);
-                top.forEach((it, k) => {
-                    const cx = x + (k % cols) * (cw + g), cy = y + Math.floor(k / cols) * (ch + g);
-                    s.addShape(R.roundRect, { x: cx, y: cy, w: cw, h: ch, fill: { color: soft }, line: { color: soft }, rectRadius: 0.08 });
-                    if (kind === 'cards') {
-                        const tm = splitTerm(it.text) || { term: clean(it.text), desc: '' };
-                        s.addShape(R.rect, { x: cx, y: cy, w: cw, h: 0.07, fill: { color: k % 2 ? th.accent : strong }, line: { width: 0 } });
-                        s.addText(tm.term, { x: cx + 0.2, y: cy + 0.18, w: cw - 0.4, h: 0.5, fontFace: head, fontSize: fsT, bold: true, color: th.title, valign: 'top', fit: 'shrink', margin: 0 });
-                        if (tm.desc) s.addText(runs(tm.desc), { x: cx + 0.2, y: cy + 0.7, w: cw - 0.4, h: ch - 0.85, valign: 'top', fit: 'shrink', margin: 0 });
-                    } else {
-                        const d = 0.62;
-                        s.addText(String(k + 1), { shape: R.ellipse, x: cx + 0.2, y: cy + (ch - d) / 2, w: d, h: d, fill: { color: k % 2 ? th.accent : strong },
-                            color: onStrong, fontFace: head, fontSize: 18, bold: true, align: 'center', valign: 'middle', margin: 0 });
-                        s.addText(runs(it.text, { fontSize: fsT - 1 }), { x: cx + 1.0, y: cy + 0.1, w: cw - 1.2, h: ch - 0.2, valign: 'middle', fit: 'shrink', margin: 0 });
-                    }
-                });
-            } else if (kind === 'process') {
-                const g = 0.08, cw = (w - g * (n - 1)) / n, chH = 0.95;
-                top.forEach((it, k) => {
-                    const cx = x + k * (cw + g);
-                    s.addText(String(k + 1).padStart(2, '0'), { shape: k ? R.chevron : R.homePlate, x: cx, y, w: cw, h: chH,
-                        fill: { color: k % 2 ? th.accent : strong }, color: onStrong, fontFace: head, fontSize: 20, bold: true, align: 'center', valign: 'middle' });
-                    const tm = splitTerm(it.text);
-                    if (tm) {
-                        s.addText(tm.term, { x: cx + 0.1, y: y + chH + 0.25, w: cw - 0.3, h: 0.45, fontFace: head, fontSize: fsT, bold: true, color: th.title, fit: 'shrink', margin: 0 });
-                        s.addText(runs(tm.desc), { x: cx + 0.1, y: y + chH + 0.72, w: cw - 0.3, h: h - chH - 0.8, valign: 'top', fit: 'shrink', margin: 0 });
-                    } else {
-                        s.addText(runs(it.text, { fontSize: fsT - 1 }), { x: cx + 0.1, y: y + chH + 0.25, w: cw - 0.3, h: h - chH - 0.3, valign: 'top', fit: 'shrink', margin: 0 });
-                    }
-                });
-            } else if (kind === 'steps') {
-                const rh = h / n, d = Math.min(0.55, rh - 0.12);
-                s.addShape(R.line, { x: x + d / 2, y: y + d / 2, w: 0, h: rh * (n - 1), line: { color: th.accent, width: 2, dashType: 'dash' } });
-                top.forEach((it, k) => {
-                    const cy = y + k * rh;
-                    s.addText(String(k + 1), { shape: R.ellipse, x, y: cy, w: d, h: d, fill: { color: strong }, line: { color: th.accent, width: 2 },
-                        color: onStrong, fontFace: head, fontSize: 14, bold: true, align: 'center', valign: 'middle', margin: 0 });
-                    s.addText(runs(it.text, { fontSize: Math.max(12, O.bodySize - 3) }), { x: x + d + 0.3, y: cy - 0.05, w: w - d - 0.3, h: Math.max(d, rh - 0.1), valign: 'top', fit: 'shrink', margin: 0 });
-                });
-            } else if (kind === 'timeline') {
-                const ly = y + h * 0.42, seg = w / n;
-                s.addShape(R.line, { x, y: ly, w, h: 0, line: { color: th.accent, width: 3 } });
-                top.forEach((it, k) => {
-                    const cx = x + seg * k + seg / 2;
-                    const tm = splitTerm(it.text);
-                    const label = tm ? tm.term : clean(it.text).split(/\s+/)[0];
-                    const desc = tm ? tm.desc : clean(it.text).split(/\s+/).slice(1).join(' ');
-                    s.addShape(R.ellipse, { x: cx - 0.16, y: ly - 0.16, w: 0.32, h: 0.32, fill: { color: k % 2 ? th.accent : strong }, line: { color: th.bg, width: 2.5 } });
-                    s.addText(label, { x: cx - seg / 2 + 0.05, y: ly - 0.95, w: seg - 0.1, h: 0.6, fontFace: head, fontSize: fsT + 2, bold: true, color: th.title, align: 'center', valign: 'bottom', fit: 'shrink', margin: 0 });
-                    if (desc) s.addText(runs(desc), { x: cx - seg / 2 + 0.08, y: ly + 0.35, w: seg - 0.16, h: h * 0.58 - 0.4, align: 'center', valign: 'top', fit: 'shrink', margin: 0 });
-                });
-            } else if (kind === 'columns') {
-                const groups = [];
-                b.items.forEach(it => { if (it.level === 0) groups.push({ head: it.text, kids: [] }); else if (groups.length) groups[groups.length - 1].kids.push(it); });
-                const g = 0.25, cw = (w - g * (groups.length - 1)) / groups.length;
-                groups.forEach((gr, k) => {
-                    const cx = x + k * (cw + g);
-                    s.addText(clean(gr.head), { shape: R.rect, x: cx, y, w: cw, h: 0.7, fill: { color: k % 2 ? th.accent : strong },
-                        color: onStrong, fontFace: head, fontSize: fsT, bold: true, align: 'center', valign: 'middle', fit: 'shrink' });
-                    s.addShape(R.rect, { x: cx, y: y + 0.7, w: cw, h: h - 0.7, fill: { color: soft }, line: { color: soft } });
-                    const paras = [];
-                    gr.kids.forEach(it => {
-                        const r = runs(it.text, { fontSize: fsD });
-                        r.forEach((q, j) => { Object.assign(q.options, { bullet: { code: '25B8', color: th.accent }, indentLevel: Math.max(0, it.level - 1), paraSpaceAfter: 6 }); if (j === r.length - 1) q.options.breakLine = true; });
-                        paras.push(...r);
+                const cw = (w - g * (cols - 1)) / cols;
+                const items = top.map(it => { const m = it.text.match(/^\*\*(.+?)\*\*\s*[:—–-]?\s*(.*)$/); return m ? { num: m[1], desc: m[2] } : { num: it.text.split(/\s+/)[0], desc: it.text.split(/\s+/).slice(1).join(' ') }; });
+                const pct = items.map(t => { const m = t.num.match(/^[~≈]?\s?([\d.]+)\s?%$/); return m ? parseFloat(m[1]) : null; });
+                const rings = O.charts && pct.every(v => v !== null && v >= 0 && v <= 100);
+                const ring = Math.min(1.7, cw * 0.55);
+                const top_ = rings ? ring + 0.2 : 1.1;
+                const descH = Math.max(...items.map(t => textH(t.desc, cw - 0.5, F.desc)));
+                const tileH = 0.3 + top_ + 0.1 + descH + 0.35;
+                return { h: rows * tileH + g * (rows - 1), draw: async (pptx, s, x, y) => {
+                    items.forEach((t, k) => {
+                        const r = Math.floor(k / cols), c = k % cols;
+                        const inRow = Math.min(cols, n - r * cols), off = (cols - inRow) * (cw + g) / 2;
+                        const cx = x + off + c * (cw + g), cy = y + r * (tileH + g);
+                        const col = cardBox(pptx, s, th, O, cx, cy, cw, tileH, k);
+                        const numCol = O.cardStyle === 'solid' ? col.head : (k % 2 ? (th.dark ? th.title : th.accent) : th.title);
+                        if (rings) {
+                            const rx = cx + (cw - ring) / 2, ry = cy + 0.3;
+                            s.addChart(pptx.ChartType.doughnut, [{ name: t.num, labels: ['value', 'rest'], values: [pct[k], 100 - pct[k]] }], {
+                                x: rx, y: ry, w: ring, h: ring, holeSize: 80, showLegend: false, showTitle: false, showValue: false, showPercent: false, showLabel: false,
+                                chartColors: [O.cardStyle === 'solid' ? col.head : (k % 2 ? th.alt : th.strong), O.cardStyle === 'solid' ? pxMix(col.head, k % 2 ? th.alt : th.strong, 0.3) : th.soft2] });
+                            s.addText(t.num, { x: rx, y: ry, w: ring, h: ring, fontFace: th.head, fontSize: Math.min(22, Math.round(ring * 12)), bold: true, color: numCol, align: 'center', valign: 'middle', margin: 0 });
+                        } else {
+                            s.addText(t.num, { x: cx + 0.2, y: cy + 0.25, w: cw - 0.4, h: 1.1, fontFace: th.head, fontSize: 48, bold: true, color: numCol, align: 'center', valign: 'middle', fit: 'shrink', margin: 0 });
+                        }
+                        s.addText(runs(t.desc, { color: col.text, boldColor: col.head }), { x: cx + 0.25, y: cy + 0.3 + top_ + 0.1, w: cw - 0.5, h: descH + 0.1, align: 'center', valign: 'top', margin: 0 });
                     });
-                    if (paras.length) s.addText(paras, { x: cx + 0.15, y: y + 0.85, w: cw - 0.3, h: h - 1.0, valign: 'top', fit: 'shrink', margin: 0 });
-                });
-            }
-        }
-        // ===== END SMART LAYOUTS =====
-
-        // ---------- sizing ----------
-        const PX = { lineH: fs => fs * 1.28 / 72, cpl: (w, fs) => Math.max(8, Math.floor(w * 72 / (fs * 0.5))) };
-        function linesFor(text, w, fs) {
-            const clean = text.replace(/[*_`$]/g, '');
-            return clean.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / PX.cpl(w, fs))), 0);
-        }
-        function blockH(b, w, O) {
-            const fs = O.bodySize;
-            switch (b.t) {
-                case 'para':    return linesFor(b.text, w, fs) * PX.lineH(fs) + 0.08;
-                case 'quote':   return Math.max(0.8, linesFor(b.text, w - 1.2, fs + 1) * PX.lineH(fs + 1) + 0.3);
-                case 'bullets': return smartKind(b) ? smartH(smartKind(b), b) : b.items.reduce((h, it) => h + linesFor(it.text, w - 0.45 - it.level * 0.4, fs - it.level * 2) * PX.lineH(fs - it.level * 2) + 0.09, 0);
-                case 'code':  { const cf = Math.max(10, fs - 6); return b.text.split('\n').length * cf * 1.2 / 72 + 0.3; }
-                case 'table': { const tf = Math.max(10, fs - 4); const cw = w / Math.max(1, b.rows[0].length);
-                                return b.rows.reduce((h, r) => h + Math.max(...r.map(c => linesFor(c || ' ', cw - 0.15, tf))) * PX.lineH(tf) + 0.16, 0); }
-                default: return 0;
-            }
-        }
-        function splitBlock(b, w, O, room) {
-            // returns [fits, rest] or null when the block cannot be split
-            const take = (arr, mk, min) => {
-                for (let n = arr.length - 1; n >= min; n--) { const a = mk(arr.slice(0, n)); if (blockH(a, w, O) <= room) return [a, mk(arr.slice(n))]; }
-                return null;
-            };
-            if (b.t === 'bullets') return take(b.items, items => ({ t: 'bullets', items }), 1);
-            if (b.t === 'table' && b.rows.length > 2) {
-                const head = b.rows[0], body = b.rows.slice(1);
-                return take(body, r => ({ t: 'table', rows: [head].concat(r), aligns: b.aligns }), 1);
-            }
-            if (b.t === 'code') {
-                const ls = b.text.split('\n');
-                return take(ls, l => ({ t: 'code', text: l.join('\n') }), 3);
+                } };
             }
             return null;
         }
-        function paginate(slide, W, H, O) {
-            const box = { w: W - 1.2, h: H - 1.45 - 0.7 };
+        // ===== END SMART LAYOUTS =====
+
+        // ---------- tables → native charts ----------
+        function tableNum(v) {
+            const m = String(v || '').replace(/[,\s]/g, '').replace(/[*_]/g, '').match(/^[^\d\-.]*(-?[\d.]+)/);
+            return m ? parseFloat(m[1]) : null;
+        }
+        function tableToChart(b) {
+            const head = b.rows[0], body = b.rows.slice(1);
+            if (!body.length || head.length < 2) return null;
+            const labels = body.map(r => (r[0] || '').replace(/[*_`]/g, ''));
+            const series = [];
+            for (let c = 1; c < head.length; c++) {
+                const vals = body.map(r => tableNum(r[c]));
+                if (vals.filter(v => v !== null).length >= Math.ceil(body.length * 0.7)) series.push({ name: (head[c] || '').replace(/[*_`]/g, ''), labels, values: vals.map(v => v || 0) });
+            }
+            return series.length ? series : null;
+        }
+        function drawChart(pptx, s, th, F, b, x, y, w, h) {
+            const series = tableToChart(b);
+            if (!series) return false;
+            const kind = b.chart;
+            const T = { bar: 'bar', column: 'bar', hbar: 'bar', line: 'line', area: 'area', pie: 'pie', doughnut: 'doughnut', donut: 'doughnut', radar: 'radar' }[kind] || 'bar';
+            const round = T === 'pie' || T === 'doughnut';
+            const data = round ? [series[0]] : series;
+            const opt = {
+                x, y, w, h, chartColors: th.palette, showTitle: false,
+                showLegend: round || data.length > 1, legendPos: round ? 'r' : 'b', legendFontSize: F.small + 3, legendColor: th.text, legendFontFace: th.body,
+                showValue: !round, showPercent: round, dataLabelFontSize: F.small + 2, dataLabelFontFace: th.body,
+                dataLabelColor: round ? 'FFFFFF' : th.text,
+                catAxisLabelColor: th.text, valAxisLabelColor: th.muted, catAxisLabelFontSize: F.small + 3, valAxisLabelFontSize: F.small + 1,
+                catAxisLabelFontFace: th.body, valAxisLabelFontFace: th.body,
+                valGridLine: { color: th.line, size: 0.5, style: 'solid' }, catGridLine: { style: 'none' }
+            };
+            const dec = data.some(sr => sr.values.some(v => Math.abs(v % 1) > 1e-9));
+            opt.dataLabelFormatCode = dec ? '#,##0.0#' : '#,##0'; opt.valAxisLabelFormatCode = dec ? '#,##0.0#' : '#,##0';
+            if (round) opt.dataLabelFormatCode = '0%';
+            if (T === 'bar') { opt.barDir = kind === 'hbar' ? 'bar' : 'col'; opt.barGapWidthPct = 55; opt.dataLabelPosition = 'outEnd'; }
+            if (T === 'line') { opt.lineSize = 3; opt.lineDataSymbolSize = 9; opt.dataLabelPosition = 't'; }
+            if (T === 'doughnut') opt.holeSize = 58;
+            if (T === 'radar') { opt.radarStyle = 'filled'; opt.showValue = false; }
+            s.addChart(pptx.ChartType[T], data, opt);
+            return true;
+        }
+
+        // ---------- block sizing ----------
+        function blockH(b, w, F, th, O) {
+            const k = smartKind(b);
+            if (k) { const L = smartLayout(k, b, w, th, O, F); if (L) return L.h; }
+            switch (b.t) {
+                case 'para':    return textH(b.text, w, F.body) + 0.05;
+                case 'quote':   return Math.max(0.9, textH(b.text, w - 1.3, F.body + 2) + 0.4);
+                case 'bullets': return b.items.reduce((h, it) => h + textH(it.text, w - 0.5 - it.level * 0.45, Math.max(13, F.body - it.level * 3)) + 0.16, 0);
+                case 'code':  { const cf = Math.max(11, F.body - 6); return b.text.split('\n').length * cf * 1.25 / 72 + 0.35; }
+                case 'table': { const tf = F.desc; const cw = w / Math.max(1, b.rows[0].length);
+                                return b.rows.reduce((h, r) => h + Math.max(...r.map(c => nLines(c || ' ', cw - 0.2, tf))) * LH(tf) + 0.18, 0); }
+                case 'math':    return 1.2;
+                default: return 0;
+            }
+        }
+        const isVisual = b => b.t === 'mermaid' || b.t === 'image' || (b.t === 'table' && b.chart && tableToChart(b));
+        function splitBlock(b, w, F, th, O, room) {
+            if (smartKind(b)) return null;
+            const take = (arr, mk, min) => {
+                for (let n = arr.length - 1; n >= min; n--) { const a = mk(arr.slice(0, n)); if (blockH(a, w, F, th, O) <= room) return [a, mk(arr.slice(n))]; }
+                return null;
+            };
+            if (b.t === 'bullets') return take(b.items, items => ({ t: 'bullets', items }), 1);
+            if (b.t === 'table' && b.rows.length > 2) { const head = b.rows[0]; return take(b.rows.slice(1), r => ({ t: 'table', rows: [head].concat(r), aligns: b.aligns }), 1); }
+            if (b.t === 'code') return take(b.text.split('\n'), l => ({ t: 'code', text: l.join('\n') }), 3);
+            return null;
+        }
+        function bodyBox(W, H) { return { x: 0.65, y: 1.62, w: W - 1.3, h: H - 1.62 - 0.72 }; }
+        function paginate(slide, W, H, O, th, F) {
+            const box = bodyBox(W, H);
             const pages = [];
             let cur = { blocks: [], visual: null };
-            const textW = p => p.visual ? box.w * 0.5 : box.w;
-            const used = p => p.blocks.reduce((h, b) => h + blockH(b, textW(p), O) + 0.15, 0);
+            const textW = p => p.visual ? box.w * (p.visual.t === 'image' ? 0.52 : 0.44) : box.w;
+            const used = p => p.blocks.reduce((h, b) => { b._narrow = !!p.visual; return h; }, 0) + p.blocks.reduce((h, b) => h + blockH(b, textW(p), F, th, O) + 0.3, 0);
             const flush = () => { if (cur.blocks.length || cur.visual) pages.push(cur); cur = { blocks: [], visual: null }; };
-            const queue = slide.blocks.slice();
-            while (queue.length) {
-                const b = queue.shift();
-                if (b.t === 'mermaid' || b.t === 'math') {
-                    if (b.t === 'math' && !cur.visual && used(cur) + 1.1 <= box.h) { cur.blocks.push(b); continue; }
+            const q = slide.blocks.slice();
+            while (q.length) {
+                const b = q.shift();
+                if (isVisual(b)) {
                     if (cur.visual || used(Object.assign({}, cur, { visual: b })) > box.h) flush();
                     cur.visual = b; continue;
                 }
                 const room = box.h - used(cur);
-                const h = blockH(b, textW(cur), O);
-                if (h + 0.15 <= room || (!cur.blocks.length && !cur.visual && !splitBlock(b, textW(cur), O, room))) { cur.blocks.push(b); continue; }
-                const sp = splitBlock(b, textW(cur), O, room - 0.15);
-                if (sp) { cur.blocks.push(sp[0]); flush(); queue.unshift(sp[1]); continue; }
-                flush(); queue.unshift(b);
+                const h = blockH(b, textW(cur), F, th, O);
+                if (h + 0.3 <= room || (!cur.blocks.length && !cur.visual && !splitBlock(b, textW(cur), F, th, O, room))) { cur.blocks.push(b); continue; }
+                const sp = splitBlock(b, textW(cur), F, th, O, room - 0.3);
+                if (sp) { cur.blocks.push(sp[0]); flush(); q.unshift(sp[1]); continue; }
+                flush(); q.unshift(b);
             }
             flush();
             return { pages: pages.length ? pages : [{ blocks: [], visual: null }], box };
         }
 
-        // ---------- images (diagrams + display maths) ----------
-        async function pptxMathImage(latex, color) {
-            const div = document.createElement('div');
-            div.style.cssText = 'position:absolute;left:-20000px;top:0;padding:12px 18px;background:#fff;display:inline-block;font-size:30px;color:#' + color + ';';
-            document.body.appendChild(div);
-            try {
-                katex.render(latex, div, { displayMode: true, throwOnError: false });
-                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-                const base64 = await elementToBase64Png(div);
-                return { base64, width: div.offsetWidth, height: div.offsetHeight };
-            } catch (e) { return null; } finally { div.remove(); }
-        }
-        function fitBox(imgW, imgH, x, y, w, h) {
-            const r = Math.min(w / imgW, h / imgH);
-            const iw = imgW * r, ih = imgH * r;
-            return { x: x + (w - iw) / 2, y: y + (h - ih) / 2, w: iw, h: ih };
+        // ---------- motifs ----------
+        function drawMotif(pptx, s, th, kind, x, y, w, h, color) {
+            const R = pptx.ShapeType;
+            if (kind === 'none' || w <= 0.2 || h <= 0.2) return;
+            if (kind === 'circles') {
+                const d = Math.min(w, h) * 1.15;
+                s.addShape(R.ellipse, { x: x + w - d * 0.62, y: y + h - d * 0.7, w: d, h: d, fill: { color, transparency: 86 }, line: { color, transparency: 100 } });
+                s.addShape(R.ellipse, { x: x + w - d * 0.9, y: y + h * 0.08, w: d * 0.55, h: d * 0.55, fill: { color, transparency: 78 }, line: { color, transparency: 100 } });
+                s.addShape(R.ellipse, { x: x + w * 0.3, y: y + h * 0.58, w: d * 0.18, h: d * 0.18, fill: { color, transparency: 40 }, line: { color, transparency: 100 } });
+            } else if (kind === 'stripes') {
+                for (let i = 0; i < 4; i++) {
+                    const sw = w * 0.16;
+                    s.addShape(R.parallelogram, { x: x + w * 0.22 + i * sw * 1.15, y, w: sw * 1.6, h, fill: { color, transparency: 70 + i * 7 }, line: { color, transparency: 100 } });
+                }
+            } else if (kind === 'dots') {
+                const n = 7, gap = Math.min(w, h) / (n + 1), d = gap * 0.22;
+                const ox = x + w - gap * (n + 0.5), oy = y + h - gap * (n + 0.5);
+                for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+                    if (r + c < n - 2) continue;
+                    s.addShape(R.ellipse, { x: ox + c * gap, y: oy + r * gap, w: d, h: d, fill: { color, transparency: 35 }, line: { color, transparency: 100 } });
+                }
+            } else if (kind === 'blocks') {
+                const bw = [0.55, 0.8, 0.4, 0.65];
+                bw.forEach((f, i) => {
+                    const bh = h / 5.2;
+                    s.addShape(R.rect, { x: x + w * (1 - f), y: y + h * 0.12 + i * bh * 1.12, w: w * f, h: bh, fill: { color, transparency: 55 + i * 10 }, line: { color, transparency: 100 } });
+                });
+            }
         }
 
-        // ---------- drawing ----------
+        // ---------- slide chrome ----------
+        function addLogo(s, x, y, maxW, maxH, chip) {
+            if (!PPTX_LOGO || !PPTX_LOGO.data) return;
+            const f = fitBox(PPTX_LOGO.w || 1, PPTX_LOGO.h || 1, x, y, maxW, maxH);
+            if (chip && chip.addShape) chip.addShape(chip.ShapeType.roundRect, { x: f.x + (maxW - f.w) / 2 - 0.14, y: f.y - 0.1, w: f.w + 0.28, h: f.h + 0.2, fill: { color: 'FFFFFF' }, line: { color: 'FFFFFF' }, rectRadius: 0.08 });
+            s.addImage({ data: PPTX_LOGO.data, x: f.x + (maxW - f.w) / 2, y: f.y, w: f.w, h: f.h });
+        }
         function drawChrome(pptx, s, th, W, H, O, footerText) {
             s.background = { color: th.bg };
-            if (th.bar === 'side') s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.16, h: H, fill: { color: th.accent }, line: { color: th.accent } });
-            if (O.footer && footerText) s.addText(footerText, { x: 0.6, y: H - 0.45, w: W * 0.6, h: 0.3, fontSize: 10, color: th.muted, fontFace: th.body });
-            if (O.slideNumbers) s.slideNumber = { x: W - 1.0, y: H - 0.45, w: 0.5, h: 0.3, fontSize: 10, color: th.muted, fontFace: th.body, align: 'right' };
+            if (th.bar === 'side') s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.18, h: H, fill: { color: th.accent }, line: { color: th.accent } });
+            if (O.footer && footerText) s.addText(footerText, { x: 0.65, y: H - 0.48, w: W * 0.6, h: 0.3, fontSize: 10, color: th.muted, fontFace: th.body, margin: 0 });
+            if (O.slideNumbers) s.slideNumber = { x: W - 1.15, y: H - 0.48, w: 0.5, h: 0.3, fontSize: 10, color: th.muted, fontFace: th.body, align: 'right' };
         }
-        function drawTitle(pptx, s, th, W, title, kicker) {
-            const head = PPTX_OPTS.headFont || th.head;
+        function drawTitle(pptx, s, th, W, F, title, kicker) {
+            const R = pptx.ShapeType;
+            const logoW = PPTX_LOGO ? 1.4 : 0;
             if (th.bar === 'band') {
-                s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: W, h: 1.15, fill: { color: th.title }, line: { color: th.title } });
-                s.addShape(pptx.ShapeType.rect, { x: 0, y: 1.15, w: W, h: 0.06, fill: { color: th.accent }, line: { color: th.accent } });
-                if (kicker) s.addText(kicker.toUpperCase(), { x: 0.6, y: 0.12, w: W - 1.2, h: 0.3, fontSize: 11, color: th.accent, bold: true, fontFace: th.body, charSpacing: 2 });
-                s.addText(title, { x: 0.6, y: kicker ? 0.38 : 0.2, w: W - 1.2, h: kicker ? 0.68 : 0.8, fontSize: 28, color: th.dark ? th.bg : 'FFFFFF', fontFace: head, bold: false, valign: 'middle', fit: 'shrink' });
+                s.addShape(R.rect, { x: 0, y: 0, w: W, h: 1.22, fill: { color: th.strong }, line: { color: th.strong } });
+                s.addShape(R.rect, { x: 0, y: 1.22, w: W, h: 0.06, fill: { color: th.accent }, line: { color: th.accent } });
+                if (kicker) s.addText(kicker.toUpperCase(), { x: 0.65, y: 0.14, w: W - 1.3 - logoW, h: 0.3, fontSize: 11, color: pxMix(th.onStrong, th.strong, 0.75), bold: true, fontFace: th.body, charSpacing: 2, margin: 0 });
+                s.addText(title, { x: 0.65, y: kicker ? 0.42 : 0.18, w: W - 1.3 - logoW, h: kicker ? 0.7 : 0.86, fontSize: F.title, color: th.onStrong, fontFace: th.head, valign: 'middle', fit: 'shrink', margin: 0 });
+                if (logoW) addLogo(s, W - 0.65 - 1.2, 0.3, 1.2, 0.62, { addShape: (t, o) => s.addShape(t, o), ShapeType: R });
                 return;
             }
-            if (kicker) s.addText(kicker.toUpperCase(), { x: 0.6, y: 0.3, w: W - 1.2, h: 0.3, fontSize: 11, color: th.accent, bold: true, fontFace: th.body, charSpacing: 2 });
-            s.addText(title, { x: 0.6, y: kicker ? 0.55 : 0.4, w: W - 1.2, h: 0.75, fontSize: 30, color: th.title, fontFace: head, valign: 'middle', fit: 'shrink' });
-            if (th.bar === 'rule') s.addShape(pptx.ShapeType.line, { x: 0.6, y: 1.32, w: W - 1.2, h: 0, line: { color: th.accent, width: 1.25 } });
-            if (th.bar === 'underline') s.addShape(pptx.ShapeType.rect, { x: 0.6, y: 1.3, w: 1.1, h: 0.07, fill: { color: th.accent }, line: { color: th.accent } });
+            const x0 = th.bar === 'side' ? 0.65 : 0.65;
+            if (kicker) s.addText(kicker.toUpperCase(), { x: x0, y: 0.32, w: W - 1.3 - logoW, h: 0.3, fontSize: 11, color: th.accent, bold: true, fontFace: th.body, charSpacing: 2, margin: 0 });
+            s.addText(title, { x: x0, y: kicker ? 0.58 : 0.4, w: W - 1.3 - logoW, h: 0.78, fontSize: F.title, color: th.title, fontFace: th.head, valign: 'middle', fit: 'shrink', margin: 0 });
+            if (th.bar === 'rule') s.addShape(R.line, { x: x0, y: 1.42, w: W - 1.3, h: 0, line: { color: th.accent, width: 1.25 } });
+            if (th.bar === 'underline') s.addShape(R.rect, { x: x0, y: 1.4, w: 1.1, h: 0.08, fill: { color: th.accent }, line: { color: th.accent } });
+            if (logoW) addLogo(s, W - 0.65 - 1.2, 0.42, 1.2, 0.62);
         }
 
-        async function drawContent(pptx, s, th, page, box, O, imgCache) {
-            const body = PPTX_OPTS.bodyFont || th.body;
-            const x0 = 0.6;
-            let y = 1.5;
-            const tw = page.visual ? box.w * 0.5 : box.w;
-            const base = { fontFace: body, color: th.text, fontSize: O.bodySize, boldColor: th.title };
-            const codeBg = th.dark ? '111827' : 'F3F4F6';
-            for (const b of page.blocks) {
-                const h = blockH(b, tw, O);
-                if (b.t === 'para') {
-                    s.addText(pptxRuns(b.text, base, th), { x: x0, y, w: tw, h, valign: 'top', margin: 0, lineSpacingMultiple: 1.05 });
-                } else if (b.t === 'quote') {
-                    const qsoft = th.dark ? pxMix(th.accent, th.bg, 0.14) : pxMix(th.accent, 'FFFFFF', 0.08);
-                    s.addShape(pptx.ShapeType.roundRect, { x: x0, y, w: tw, h: h + 0.2, fill: { color: qsoft }, line: { color: qsoft }, rectRadius: 0.06 });
-                    s.addShape(pptx.ShapeType.rect, { x: x0, y, w: 0.08, h: h + 0.2, fill: { color: th.accent }, line: { width: 0 } });
-                    s.addText('\u201C', { x: x0 + 0.2, y: y - 0.2, w: 0.8, h: 0.9, fontSize: 60, color: th.accent, fontFace: 'Georgia', bold: true, margin: 0 });
-                    s.addText(pptxRuns(b.text, Object.assign({}, base, { italic: true, color: th.title, fontSize: O.bodySize + 1 }), th), { x: x0 + 0.95, y: y + 0.05, w: tw - 1.15, h: h + 0.1, valign: 'middle', margin: 0 });
-                } else if (b.t === 'bullets' && smartKind(b)) {
-                    const isLast = b === page.blocks[page.blocks.length - 1];
-                    const hh = isLast ? Math.max(h, 1.5 + box.h - y) : h;
-                    drawSmart(pptx, s, th, b, smartKind(b), x0, y, tw, hh, O);
-                } else if (b.t === 'bullets') {
-                    const paras = [];
-                    const counters = [0, 0, 0, 0, 0];
-                    b.items.forEach(it => {
-                        const fs = Math.max(11, O.bodySize - it.level * 2);
-                        const runs = pptxRuns(it.text, Object.assign({}, base, { fontSize: fs, color: it.level ? th.muted : th.text }), th);
-                        const bullet = it.ordered ? { type: 'number', style: 'arabicPeriod' }
-                            : { code: it.level ? '2013' : (PPTX_BULLETS[PPTX_OPTS.bullet] || THEME_BULLET[th.bar] || '25A0'), color: th.accent };
-                        const tm0 = !it.level && !/^\*\*/.test(it.text) ? splitTerm(it.text) : null;
-                        if (tm0) runs.splice(0, runs.length, ...pptxRuns('**' + tm0.term + ':** ' + tm0.desc, Object.assign({}, base, { fontSize: fs }), th));
-                        runs.forEach((r, k) => {
-                            Object.assign(r.options, { bullet, indentLevel: it.level, paraSpaceAfter: 6 });
-                            if (k === runs.length - 1) r.options.breakLine = true;
-                        });
-                        paras.push(...runs);
-                    });
-                    s.addText(paras, { x: x0, y, w: tw, h, valign: 'top', margin: 0 });
-                } else if (b.t === 'code') {
-                    const cf = Math.max(10, O.bodySize - 6);
-                    s.addText(b.text, { x: x0, y, w: tw, h, fontFace: 'Consolas', fontSize: cf, color: th.dark ? 'E5E7EB' : '1F2937',
-                        fill: { color: codeBg }, valign: 'top', margin: 0.12, line: { color: th.accent, width: 0.5 } });
-                } else if (b.t === 'table') {
-                    const tf = Math.max(10, O.bodySize - 4);
-                    const cols = Math.max(...b.rows.map(r => r.length));
-                    const band = th.dark ? '243042' : 'F3F4F6';
-                    const rows = b.rows.map((r, ri) => {
-                        const cells = [];
-                        for (let c = 0; c < cols; c++) {
-                            const isH = ri === 0;
-                            cells.push({ text: pptxRuns(r[c] || '', { fontFace: body, fontSize: tf, color: isH ? (th.dark ? th.bg : 'FFFFFF') : th.text, bold: isH }, th),
-                                options: { fill: { color: isH ? th.title === 'FFFFFF' || th.dark ? th.accent : th.title : (ri % 2 === 0 ? band : th.bg) },
-                                           align: b.aligns[c] || 'left', valign: 'middle' } });
-                        }
-                        return cells;
-                    });
-                    const wt = []; for (let c = 0; c < cols; c++) wt.push(Math.min(40, Math.max(6, ...b.rows.map(r => (r[c] || '').length))));
-                    const tot = wt.reduce((a2, v) => a2 + v, 0);
-                    s.addTable(rows, { x: x0, y, w: tw, colW: wt.map(v => tw * v / tot), border: { type: 'solid', pt: 0.5, color: th.dark ? '374151' : 'D1D5DB' }, margin: 0.06, autoPage: false });
-                } else if (b.t === 'math') {
-                    const img = imgCache.get(b) || await pptxMathImage(b.latex, th.dark ? '111111' : th.text);
-                    if (img) { const f = fitBox(img.width, img.height, x0, y, tw, 1.0); s.addImage({ data: 'image/png;base64,' + img.base64, x: f.x, y: f.y, w: f.w, h: f.h }); }
-                    y += 1.0 + 0.15; continue;
-                }
-                y += h + 0.15;
+        // ---------- content ----------
+        async function drawBlock(pptx, s, th, O, F, b, x, y, w, h) {
+            const base = { fontFace: th.body, color: th.text, fontSize: F.body, boldColor: th.title };
+            const k = smartKind(b);
+            if (k) { const L = smartLayout(k, b, w, th, O, F); if (L) { await L.draw(pptx, s, x, y); return; } }
+            if (b.t === 'para') {
+                s.addText(pptxRuns(b.text, base, th), { x, y, w, h, valign: 'top', margin: 0, lineSpacingMultiple: 1.08 });
+            } else if (b.t === 'quote') {
+                s.addShape(pptx.ShapeType.roundRect, { x, y, w, h, fill: { color: th.soft }, line: { color: th.soft }, rectRadius: 0.08 });
+                s.addShape(pptx.ShapeType.rect, { x, y, w: 0.09, h, fill: { color: th.accent }, line: { color: th.accent } });
+                s.addText('“', { x: x + 0.25, y: y - 0.12, w: 0.9, h: 1.0, fontSize: 66, color: th.accent, fontFace: 'Georgia', bold: true, margin: 0 });
+                s.addText(pptxRuns(b.text, Object.assign({}, base, { italic: true, color: th.title, fontSize: F.body + 2 }), th), { x: x + 1.05, y, w: w - 1.3, h, valign: 'middle', margin: 0 });
+            } else if (b.t === 'bullets') {
+                const paras = [];
+                const marker = PPTX_BULLETS[O.bullet] || THEME_BULLET[th.bar] || '25CF';
+                b.items.forEach(it => {
+                    const fs = Math.max(13, F.body - it.level * 3);
+                    const tm0 = !it.level && !/^\*\*/.test(it.text) ? splitTerm(it.text) : null;
+                    const txt = tm0 ? '**' + tm0.term + ':** ' + tm0.desc : it.text;
+                    const runs = pptxRuns(txt, Object.assign({}, base, { fontSize: fs, color: it.level ? th.muted : th.text }), th);
+                    const bullet = it.ordered ? { type: 'number', style: 'arabicPeriod' } : { code: it.level ? '2013' : marker, color: th.accent };
+                    runs.forEach((r, j) => { if (j === 0) Object.assign(r.options, { bullet, indentLevel: it.level, paraSpaceAfter: 10 }); if (j === runs.length - 1) r.options.breakLine = true; });
+                    paras.push(...runs);
+                });
+                s.addText(paras, { x, y, w, h, valign: 'top', margin: 0 });
+            } else if (b.t === 'code') {
+                s.addText(b.text, { x, y, w, h, fontFace: 'Consolas', fontSize: Math.max(11, F.body - 6), color: th.dark ? 'E5E7EB' : '1F2937',
+                    fill: { color: th.dark ? pxMix('000000', th.bg, 0.35) : 'F3F4F6' }, valign: 'top', margin: 0.15, line: { color: th.soft2, width: 0.75 } });
+            } else if (b.t === 'table') {
+                const tf = F.desc, cols = Math.max(...b.rows.map(r => r.length));
+                const band = th.dark ? pxMix(th.text, th.bg, 0.07) : pxMix(th.accent, 'FFFFFF', 0.06);
+                const rows = b.rows.map((r, ri) => {
+                    const cells = [];
+                    for (let c = 0; c < cols; c++) {
+                        const isH = ri === 0;
+                        cells.push({ text: pptxRuns(r[c] || '', { fontFace: th.body, fontSize: tf, color: isH ? th.onStrong : th.text, bold: isH, boldColor: isH ? th.onStrong : th.title }, th),
+                            options: { fill: { color: isH ? th.strong : (ri % 2 === 0 ? band : th.bg) }, align: b.aligns[c] || 'left', valign: 'middle' } });
+                    }
+                    return cells;
+                });
+                const wt = []; for (let c = 0; c < cols; c++) wt.push(Math.min(40, Math.max(6, ...b.rows.map(r => (r[c] || '').length))));
+                const tot = wt.reduce((a, v) => a + v, 0);
+                s.addTable(rows, { x, y, w, colW: wt.map(v => w * v / tot), border: { type: 'solid', pt: 0.5, color: th.line }, margin: [0.07, 0.12, 0.07, 0.12], autoPage: false });
+            } else if (b.t === 'math') {
+                const img = await pptxMathImage(b.latex, th.text);
+                if (img) { const f = fitBox(img.width, img.height, x, y, w, 1.2); s.addImage({ data: 'image/png;base64,' + img.base64, x: f.x, y: f.y, w: f.w, h: f.h }); }
+                else s.addText(pptxLatexText(b.latex), { x, y, w, h: 1.0, fontSize: F.body + 4, color: th.text, fontFace: 'Cambria Math', align: 'center', valign: 'middle' });
             }
-            if (page.visual) {
-                const v = page.visual;
-                const img = v.t === 'mermaid' ? await mermaidToBase64Png(v.code) : await pptxMathImage(v.latex, '111111');
-                const vx = page.blocks.length ? x0 + tw + 0.3 : x0;
-                const vw = page.blocks.length ? box.w - tw - 0.3 : box.w;
+        }
+        async function drawVisual(pptx, s, th, O, F, v, x, y, w, h) {
+            if (v.t === 'table') { if (drawChart(pptx, s, th, F, v, x, y, w, h)) return; }
+            if (v.t === 'image') {
+                const img = await loadDeckImage(v.src);
+                if (img) { const f = fitBox(img.width, img.height, x, y, w, h); s.addImage({ data: img.data, x: f.x, y: f.y, w: f.w, h: f.h }); }
+                else {
+                    s.addShape(pptx.ShapeType.roundRect, { x, y, w, h, fill: { color: th.soft }, line: { color: th.accent, width: 1.25, dashType: 'dash' }, rectRadius: 0.1 });
+                    await iconBadge(pptx, s, 'image', x + w / 2 - 0.45, y + h / 2 - 0.75, 0.9, th.soft2, th.strong);
+                    s.addText((v.alt ? v.alt + '\n' : '') + 'Insert picture here', { x: x + 0.3, y: y + h / 2 + 0.25, w: w - 0.6, h: 0.9, fontSize: F.small + 2, color: th.muted, fontFace: th.body, align: 'center', valign: 'top', margin: 0 });
+                }
+                return;
+            }
+            if (v.t === 'mermaid') {
+                const img = await mermaidToBase64Png(v.code);
                 if (img) {
-                    const f = fitBox(img.width, img.height, vx, 1.5, vw, box.h);
-                    if (th.dark) s.addShape(pptx.ShapeType.roundRect, { x: f.x - 0.1, y: f.y - 0.1, w: f.w + 0.2, h: f.h + 0.2, fill: { color: 'FFFFFF' }, line: { color: 'FFFFFF' }, rectRadius: 0.08 });
+                    const f = fitBox(img.width, img.height, x, y, w, h);
+                    if (th.dark) s.addShape(pptx.ShapeType.roundRect, { x: f.x - 0.12, y: f.y - 0.12, w: f.w + 0.24, h: f.h + 0.24, fill: { color: 'FFFFFF' }, line: { color: 'FFFFFF' }, rectRadius: 0.08 });
                     s.addImage({ data: 'image/png;base64,' + img.base64, x: f.x, y: f.y, w: f.w, h: f.h });
-                } else {
-                    s.addText('Diagram could not be rendered', { x: vx, y: 1.5, w: vw, h: 0.5, color: th.muted, italic: true, fontSize: 12 });
-                }
+                } else s.addText('Diagram could not be rendered', { x, y, w, h: 0.5, color: th.muted, italic: true, fontSize: 12 });
+            }
+        }
+        async function drawContent(pptx, s, th, O, F, page, box) {
+            const vis = page.visual;
+            const tw = vis ? box.w * (vis.t === 'image' ? 0.52 : 0.44) : box.w;
+            page.blocks.forEach(b => { b._narrow = !!vis; });
+            const hs = page.blocks.map(b => blockH(b, tw, F, th, O));
+            const total = hs.reduce((a, v) => a + v, 0) + 0.3 * Math.max(0, hs.length - 1);
+            let y = box.y + (O.vcenter && total < box.h ? (box.h - total) * 0.42 : 0);
+            for (let i = 0; i < page.blocks.length; i++) {
+                await drawBlock(pptx, s, th, O, F, page.blocks[i], box.x, y, tw, hs[i]);
+                y += hs[i] + 0.3;
+            }
+            if (vis) {
+                const vx = page.blocks.length ? box.x + tw + 0.4 : box.x;
+                const vw = page.blocks.length ? box.w - tw - 0.4 : box.w;
+                await drawVisual(pptx, s, th, O, F, vis, vx, box.y, vw, box.h);
             }
         }
 
+        // ---------- special slides ----------
         function drawCover(pptx, th, W, H, cover, O) {
             const s = pptx.addSlide();
-            s.background = { color: th.bg };
-            const head = PPTX_OPTS.headFont || th.head, body = PPTX_OPTS.bodyFont || th.body;
-            const meta = O.coverMeta ? [DOC_META.author, DOC_META.company, new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join('  ·  ') : '';
-            const onPrimary = th.dark ? th.bg : 'FFFFFF';
+            const meta = O.coverMeta ? [DOC_META.author, DOC_META.company, new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join('   ·   ') : '';
+            const R = pptx.ShapeType, on = th.onStrong;
+            const tFs = cover.title.length > 48 ? 36 : 44;
             if (th.cover === 'split') {
-                s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: W * 0.62, h: H, fill: { color: th.dark ? th.accent : th.title }, line: { color: th.dark ? th.accent : th.title } });
-                s.addShape(pptx.ShapeType.rect, { x: W * 0.62, y: 0, w: 0.12, h: H, fill: { color: th.dark ? th.title : th.accent }, line: { width: 0 } });
-                s.addText(cover.title, { x: 0.7, y: H * 0.28, w: W * 0.62 - 1.2, h: 1.8, fontSize: 40, bold: true, color: onPrimary, fontFace: head, valign: 'bottom', fit: 'shrink' });
-                if (cover.sub) s.addText(cover.sub, { x: 0.7, y: H * 0.28 + 1.9, w: W * 0.62 - 1.2, h: 1.0, fontSize: 18, color: onPrimary, fontFace: body, valign: 'top', fit: 'shrink' });
-                if (meta) s.addText(meta, { x: 0.7, y: H - 1.0, w: W * 0.62 - 1.2, h: 0.4, fontSize: 12, color: onPrimary, fontFace: body });
+                s.background = { color: th.bg };
+                const pw = W * 0.6;
+                drawMotif(pptx, s, th, th.motif, pw, 0, W - pw, H, th.accent);
+                s.addShape(R.rect, { x: 0, y: 0, w: pw, h: H, fill: { color: th.strong }, line: { color: th.strong } });
+                s.addShape(R.rect, { x: 0.8, y: H * 0.3 - 0.35, w: 0.9, h: 0.08, fill: { color: th.dark ? on : th.accent }, line: { width: 0 } });
+                s.addText(cover.title, { x: 0.8, y: H * 0.3, w: pw - 1.5, h: 2.0, fontSize: tFs, bold: true, color: on, fontFace: th.head, valign: 'top', fit: 'shrink', margin: 0 });
+                if (cover.sub) s.addText(cover.sub, { x: 0.8, y: H * 0.3 + 2.1, w: pw - 1.5, h: 1.1, fontSize: 20, color: pxMix(on, th.strong, 0.85), fontFace: th.body, valign: 'top', fit: 'shrink', margin: 0 });
+                if (meta) s.addText(meta, { x: 0.8, y: H - 1.0, w: pw - 1.5, h: 0.4, fontSize: 13, color: pxMix(on, th.strong, 0.75), fontFace: th.body, margin: 0 });
+                addLogo(s, pw + (W - pw) / 2 - 1.0, 0.6, 2.0, 0.9);
+            } else if (th.cover === 'full') {
+                s.background = { color: th.strong };
+                drawMotif(pptx, s, th, th.motif, W * 0.55, 0, W * 0.45, H, on);
+                s.addShape(R.rect, { x: 0.9, y: H * 0.32 - 0.35, w: 0.9, h: 0.08, fill: { color: on }, line: { width: 0 } });
+                s.addText(cover.title, { x: 0.9, y: H * 0.32, w: W * 0.5, h: 2.0, fontSize: tFs + 2, bold: true, color: on, fontFace: th.head, valign: 'top', fit: 'shrink', margin: 0 });
+                if (cover.sub) s.addText(cover.sub, { x: 0.9, y: H * 0.32 + 2.1, w: W * 0.5, h: 1.0, fontSize: 20, color: pxMix(on, th.strong, 0.85), fontFace: th.body, valign: 'top', fit: 'shrink', margin: 0 });
+                if (meta) s.addText(meta, { x: 0.9, y: H - 1.0, w: W * 0.6, h: 0.4, fontSize: 13, color: pxMix(on, th.strong, 0.75), fontFace: th.body, margin: 0 });
+                addLogo(s, 0.9, 0.6, 2.0, 0.8, { addShape: (t, o) => s.addShape(t, o), ShapeType: pptx.ShapeType });
             } else if (th.cover === 'band') {
-                s.addShape(pptx.ShapeType.rect, { x: 0, y: H * 0.3, w: W, h: H * 0.34, fill: { color: th.title }, line: { color: th.title } });
-                s.addShape(pptx.ShapeType.rect, { x: 0, y: H * 0.64, w: W, h: 0.08, fill: { color: th.accent }, line: { width: 0 } });
-                s.addText(cover.title, { x: 0.8, y: H * 0.3, w: W - 1.6, h: H * 0.34, fontSize: 40, bold: true, color: onPrimary, fontFace: head, valign: 'middle', fit: 'shrink' });
-                if (cover.sub) s.addText(cover.sub, { x: 0.8, y: H * 0.68, w: W - 1.6, h: 0.8, fontSize: 18, color: th.text, fontFace: body, fit: 'shrink' });
-                if (meta) s.addText(meta, { x: 0.8, y: H - 0.9, w: W - 1.6, h: 0.4, fontSize: 12, color: th.muted, fontFace: body });
+                s.background = { color: th.bg };
+                drawMotif(pptx, s, th, th.motif, W * 0.5, 0, W * 0.5, H * 0.3, th.accent);
+                s.addShape(R.rect, { x: 0, y: H * 0.3, w: W, h: H * 0.36, fill: { color: th.strong }, line: { color: th.strong } });
+                s.addShape(R.rect, { x: 0, y: H * 0.66, w: W, h: 0.09, fill: { color: th.accent }, line: { width: 0 } });
+                s.addText(cover.title, { x: 0.9, y: H * 0.3, w: W - 1.8, h: H * 0.36, fontSize: tFs, bold: true, color: on, fontFace: th.head, valign: 'middle', fit: 'shrink', margin: 0 });
+                if (cover.sub) s.addText(cover.sub, { x: 0.9, y: H * 0.7, w: W - 1.8, h: 0.8, fontSize: 20, color: th.text, fontFace: th.body, fit: 'shrink', margin: 0 });
+                if (meta) s.addText(meta, { x: 0.9, y: H - 0.9, w: W - 1.8, h: 0.4, fontSize: 13, color: th.muted, fontFace: th.body, margin: 0 });
+                addLogo(s, 0.9, 0.55, 2.0, 0.8);
             } else {
-                s.addText(cover.title, { x: 0.8, y: H * 0.22, w: W - 1.6, h: 1.8, fontSize: 42, bold: true, color: th.title, fontFace: head, align: 'center', valign: 'bottom', fit: 'shrink' });
-                s.addShape(pptx.ShapeType.rect, { x: W / 2 - 0.6, y: H * 0.22 + 1.95, w: 1.2, h: 0.07, fill: { color: th.accent }, line: { width: 0 } });
-                if (cover.sub) s.addText(cover.sub, { x: 1.0, y: H * 0.22 + 2.15, w: W - 2.0, h: 1.0, fontSize: 18, color: th.muted, fontFace: body, align: 'center', valign: 'top', fit: 'shrink' });
-                if (meta) s.addText(meta, { x: 0.8, y: H - 0.9, w: W - 1.6, h: 0.4, fontSize: 12, color: th.muted, fontFace: body, align: 'center' });
+                s.background = { color: th.bg };
+                drawMotif(pptx, s, th, th.motif, W * 0.62, H * 0.45, W * 0.38, H * 0.55, th.accent);
+                addLogo(s, W / 2 - 1.0, 0.55, 2.0, 0.8);
+                s.addText(cover.title, { x: 1.0, y: H * 0.24, w: W - 2.0, h: 1.9, fontSize: tFs + 2, bold: true, color: th.title, fontFace: th.head, align: 'center', valign: 'bottom', fit: 'shrink', margin: 0 });
+                s.addShape(R.rect, { x: W / 2 - 0.6, y: H * 0.24 + 2.05, w: 1.2, h: 0.08, fill: { color: th.accent }, line: { width: 0 } });
+                if (cover.sub) s.addText(cover.sub, { x: 1.5, y: H * 0.24 + 2.3, w: W - 3.0, h: 1.0, fontSize: 20, color: th.muted, fontFace: th.body, align: 'center', valign: 'top', fit: 'shrink', margin: 0 });
+                if (meta) s.addText(meta, { x: 1.0, y: H - 0.95, w: W - 2.0, h: 0.4, fontSize: 13, color: th.muted, fontFace: th.body, align: 'center', margin: 0 });
             }
+            return s;
         }
-
-        function drawSection(pptx, th, W, H, title, num, O, footerText) {
+        function drawSection(pptx, th, W, H, title, num, total, O) {
             const s = pptx.addSlide();
-            const fill = th.dark ? th.accent : th.title;
-            const on = th.dark ? th.bg : 'FFFFFF';
-            s.background = { color: fill };
-            s.addText(String(num).padStart(2, '0'), { x: 0.8, y: H * 0.25, w: 3, h: 1.0, fontSize: 54, bold: true, color: th.dark ? th.bg : th.accent, fontFace: PPTX_OPTS.headFont || th.head });
-            s.addText(title, { x: 0.8, y: H * 0.25 + 1.05, w: W - 1.6, h: 1.4, fontSize: 36, color: on, fontFace: PPTX_OPTS.headFont || th.head, valign: 'top', fit: 'shrink' });
-            s.addShape(pptx.ShapeType.rect, { x: 0.8, y: H * 0.25 + 2.55, w: 1.4, h: 0.07, fill: { color: on }, line: { width: 0 } });
-            if (O.slideNumbers) s.slideNumber = { x: W - 1.0, y: H - 0.45, w: 0.5, h: 0.3, fontSize: 10, color: on, align: 'right' };
+            const on = th.onStrong;
+            s.background = { color: th.strong };
+            drawMotif(pptx, s, th, th.motif, W * 0.58, 0, W * 0.42, H, on);
+            s.addText(String(num).padStart(2, '0'), { x: 0.9, y: H * 0.2, w: 4, h: 1.7, fontSize: 110, bold: true, color: th.dark ? th.bg : th.accent, fontFace: th.head, margin: 0, valign: 'bottom' });
+            if (total > 1) s.addText(('Section ' + num + ' of ' + total).toUpperCase(), { x: 0.95, y: H * 0.2 + 1.85, w: 5, h: 0.35, fontSize: 12, bold: true, charSpacing: 3, color: pxMix(on, th.strong, 0.7), fontFace: th.body, margin: 0 });
+            s.addText(title, { x: 0.9, y: H * 0.2 + 2.25, w: W * 0.6, h: 1.4, fontSize: 40, color: on, fontFace: th.head, bold: true, valign: 'top', fit: 'shrink', margin: 0 });
+            if (O.slideNumbers) s.slideNumber = { x: W - 1.15, y: H - 0.48, w: 0.5, h: 0.3, fontSize: 10, color: pxMix(on, th.strong, 0.7), align: 'right' };
+            return s;
+        }
+        function drawAgenda(pptx, th, W, H, O, F, items, footerText) {
+            const s = pptx.addSlide();
+            drawChrome(pptx, s, th, W, H, O, footerText);
+            drawTitle(pptx, s, th, W, F, 'Agenda', '');
+            const box = bodyBox(W, H);
+            const cols = items.length > 5 ? 2 : 1, rows = Math.ceil(items.length / cols);
+            const g = 0.35, cw = (box.w - g * (cols - 1)) / cols, rh = Math.min(0.95, (box.h - 0.15 * (rows - 1)) / rows);
+            const total = rows * rh + 0.15 * (rows - 1);
+            const y0 = box.y + (box.h - total) * 0.4;
+            items.forEach((t, k) => {
+                const c = Math.floor(k / rows), r = k % rows;
+                const x = box.x + c * (cw + g), y = y0 + r * (rh + 0.15);
+                const fill = k % 2 ? th.alt : th.strong;
+                s.addShape(pptx.ShapeType.roundRect, { x, y, w: cw, h: rh, fill: { color: th.soft }, line: { color: th.soft }, rectRadius: 0.08 });
+                s.addText(String(k + 1).padStart(2, '0'), { shape: pptx.ShapeType.roundRect, x, y, w: rh * 1.15, h: rh, fill: { color: fill }, line: { color: fill }, rectRadius: 0.08,
+                    color: pxLum(fill) > 0.6 ? '111111' : 'FFFFFF', fontSize: 22, bold: true, fontFace: th.head, align: 'center', valign: 'middle', margin: 0 });
+                s.addText(t, { x: x + rh * 1.15 + 0.3, y, w: cw - rh * 1.15 - 0.45, h: rh, fontSize: F.head + 1, color: th.title, fontFace: th.head, valign: 'middle', fit: 'shrink', margin: 0 });
+            });
+            return s;
+        }
+        function quoteParts(text) {
+            const m = text.match(/^(.*?)\s*[—–]\s*([^—–]{2,60})$/) || text.match(/^(.*?)\s+--\s+(.{2,60})$/);
+            return m ? { q: m[1].replace(/^["“]|["”]$/g, ''), by: m[2] } : { q: text.replace(/^["“]|["”]$/g, ''), by: '' };
+        }
+        function statementOf(page) {
+            if (page.visual || page.blocks.length !== 1) return null;
+            const b = page.blocks[0];
+            if (b.t === 'quote') return { kind: 'quote', text: b.text };
+            if (b.layout === 'statement' && b.t === 'para') return { kind: 'text', text: b.text };
+            if (b.t === 'para' && b.text.split(/\s+/).length <= 22) return { kind: 'text', text: b.text };
+            if (b.t === 'bullets' && b.items.length === 1 && STAT_RE.test(b.items[0].text)) {
+                const m = b.items[0].text.match(/^\*\*(.+?)\*\*\s*[:—–-]?\s*(.*)$/);
+                return { kind: 'stat', num: m[1], text: m[2] };
+            }
+            return null;
+        }
+        function drawStatement(pptx, th, W, H, O, F, st, title) {
+            const s = pptx.addSlide();
+            const on = th.onStrong;
+            s.background = { color: th.strong };
+            drawMotif(pptx, s, th, th.motif, W * 0.76, H * 0.55, W * 0.24, H * 0.45, on);
+            const base = { fontFace: th.head, color: on, boldColor: on };
+            if (title) s.addText(title.toUpperCase(), { x: 1.1, y: 0.7, w: W - 2.2, h: 0.4, fontSize: 13, bold: true, charSpacing: 3, color: pxMix(on, th.strong, 0.7), fontFace: th.body, margin: 0 });
+            if (st.kind === 'stat') {
+                s.addText(st.num, { x: 1.1, y: H * 0.22, w: W - 2.2, h: 2.2, fontSize: 120, bold: true, color: th.dark ? th.bg : on, fontFace: th.head, valign: 'bottom', fit: 'shrink', margin: 0 });
+                s.addText(pptxRuns(st.text, Object.assign({}, base, { fontSize: 28 }), th), { x: 1.1, y: H * 0.22 + 2.35, w: W * 0.65, h: 1.6, valign: 'top', fit: 'shrink', margin: 0 });
+            } else {
+                const p = st.kind === 'quote' ? quoteParts(st.text) : { q: st.text, by: '' };
+                if (st.kind === 'quote') s.addText('“', { x: 0.9, y: H * 0.12, w: 1.6, h: 1.8, fontSize: 150, color: th.dark ? th.bg : th.accent, fontFace: 'Georgia', bold: true, margin: 0 });
+                const fs = p.q.length > 140 ? 28 : p.q.length > 80 ? 34 : 40;
+                s.addText(pptxRuns(p.q, Object.assign({}, base, { fontSize: fs, italic: st.kind === 'quote' }), th), { x: 1.1, y: H * 0.3, w: W * 0.66, h: H * 0.42, valign: 'middle', fit: 'shrink', margin: 0, lineSpacingMultiple: 1.05 });
+                if (p.by) s.addText('— ' + p.by, { x: 1.1, y: H * 0.3 + H * 0.44, w: W * 0.7, h: 0.5, fontSize: 18, color: pxMix(on, th.strong, 0.8), fontFace: th.body, margin: 0 });
+            }
+            if (O.slideNumbers) s.slideNumber = { x: W - 1.15, y: H - 0.48, w: 0.5, h: 0.3, fontSize: 10, color: pxMix(on, th.strong, 0.7), align: 'right' };
+            return s;
+        }
+        function drawClosing(pptx, th, W, H, O) {
+            const s = pptx.addSlide();
+            const on = th.onStrong;
+            s.background = { color: th.strong };
+            drawMotif(pptx, s, th, th.motif, W * 0.66, H * 0.3, W * 0.34, H * 0.7, on);
+            addLogo(s, W / 2 - 1.0, 0.7, 2.0, 0.8, { addShape: (t, o) => s.addShape(t, o), ShapeType: pptx.ShapeType });
+            s.addText(O.closingText || 'Thank you', { x: 1, y: H * 0.3, w: W - 2, h: 1.5, fontSize: 54, bold: true, color: on, fontFace: th.head, align: 'center', valign: 'middle', fit: 'shrink', margin: 0 });
+            s.addShape(pptx.ShapeType.rect, { x: W / 2 - 0.6, y: H * 0.3 + 1.6, w: 1.2, h: 0.08, fill: { color: th.dark ? th.bg : th.accent }, line: { width: 0 } });
+            const who = [DOC_META.author, DOC_META.company].filter(Boolean).join('   ·   ');
+            if (who) s.addText(who, { x: 1, y: H * 0.3 + 1.85, w: W - 2, h: 0.5, fontSize: 18, color: pxMix(on, th.strong, 0.85), fontFace: th.body, align: 'center', margin: 0 });
+            return s;
         }
 
-        async function markdownToPptx(markdown) {
-            if (typeof PptxGenJS === 'undefined') throw new Error('PowerPoint library did not load — check your connection');
-            await renderPreview();
-            const O = PPTX_OPTS;
-            const th = PPTX_THEMES[O.theme] || PPTX_THEMES.navy;
+        // ---------- transitions (PptxGenJS has none: add them to the slide XML) ----------
+        async function addTransitions(buf, kind) {
+            const X = { fade: '<p:fade/>', push: '<p:push dir="u"/>', wipe: '<p:wipe dir="r"/>', cover: '<p:cover dir="l"/>', split: '<p:split orient="vert" dir="out"/>' }[kind];
+            const zip = await JSZip.loadAsync(buf);
+            const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n));
+            for (const n of names) {
+                let x = await zip.file(n).async('string');
+                if (x.includes('<p:transition')) continue;
+                const t = '<p:transition spd="med">' + X + '</p:transition>';
+                if (x.includes('<p:timing')) x = x.replace('<p:timing', t + '<p:timing');
+                else if (x.includes('</p:clrMapOvr>')) x = x.replace('</p:clrMapOvr>', '</p:clrMapOvr>' + t);
+                else x = x.replace('</p:sld>', t + '</p:sld>');
+                zip.file(n, x);
+            }
+            return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+        }
+
+        async function buildDeck(markdown, O) {
+            const th = getDeckTheme(O), F = deckFonts(O);
+            FONT_K = /georgia|times|cambria|garamond|book|serif|palatino/i.test(th.head + th.body) ? 0.62 : 0.56;
             const pptx = new PptxGenJS();
             const LAY = { '16:9': ['LAYOUT_WIDE', 13.333, 7.5], '4:3': ['LAYOUT_4x3', 10, 7.5], '16:10': ['LAYOUT_16x10', 10, 6.25] }[O.ratio] || ['LAYOUT_WIDE', 13.333, 7.5];
             pptx.layout = LAY[0];
             const W = LAY[1], H = LAY[2];
+            pptx.theme = { headFontFace: th.head, bodyFontFace: th.body };
             const { cover, slides } = pptxParse(markdown);
             const title = DOC_META.title || (cover && cover.title) || 'Presentation';
             pptx.title = title; pptx.author = DOC_META.author || ''; pptx.company = DOC_META.company || ''; pptx.subject = DOC_META.subject || '';
-            const imgCache = new Map();
             const footerText = (DOC_THEME.footerMode === 'textPage' && DOC_THEME.footerText) ? DOC_THEME.footerText : title;
-
-            if (cover) drawCover(pptx, th, W, H, cover, O);
+            if (cover) { const cs = drawCover(pptx, th, W, H, cover, O); if (cover.notes) cs.addNotes(cover.notes); }
+            const sections = slides.filter(x => x.kind === 'section');
             if (O.agenda) {
-                let items = slides.filter(x => x.kind === 'section').map(x => x.title);
+                let items = sections.map(x => x.title);
                 if (items.length < 2) items = slides.filter(x => !x.kicker && x.title).map(x => x.title).filter((v, k, a) => a.indexOf(v) === k);
-                if (items.length >= 2 && items.length <= 10) {
-                    const ag = pptx.addSlide();
-                    drawChrome(pptx, ag, th, W, H, O, footerText);
-                    drawTitle(pptx, ag, th, W, 'Agenda', '');
-                    const blk = { t: 'bullets', items: items.map(t => ({ text: t, level: 0, ordered: true })) };
-                    if (items.length <= 6) drawSmart(pptx, ag, th, blk, 'steps', 0.6, 1.6, W - 1.2, H - 2.4, O);
-                    else await drawContent(pptx, ag, th, { blocks: [blk], visual: null }, { w: W - 1.2, h: H - 2.2 }, O, imgCache);
-                }
+                if (items.length >= 2 && items.length <= 10) drawAgenda(pptx, th, W, H, O, F, items, footerText);
             }
             let sec = 0;
             for (const sl of slides) {
-                if (sl.kind === 'section') { drawSection(pptx, th, W, H, sl.title, ++sec, O, footerText); continue; }
-                const { pages, box } = paginate(sl, W, H, O);
+                if (sl.kind === 'section') { const ss = drawSection(pptx, th, W, H, sl.title, ++sec, sections.length, O); if (sl.notes) ss.addNotes(sl.notes); continue; }
+                const { pages, box } = paginate(sl, W, H, O, th, F);
                 for (let p = 0; p < pages.length; p++) {
-                    const s = pptx.addSlide();
-                    drawChrome(pptx, s, th, W, H, O, footerText);
-                    drawTitle(pptx, s, th, W, (sl.title || title) + (p ? ' (cont.)' : ''), sl.kicker);
-                    await drawContent(pptx, s, th, pages[p], box, O, imgCache);
-                    if (sl.notes) s.addNotes(sl.notes);
+                    const st = pages.length === 1 ? statementOf(pages[p]) : null;
+                    let s;
+                    if (st) s = drawStatement(pptx, th, W, H, O, F, st, sl.title);
+                    else {
+                        s = pptx.addSlide();
+                        drawChrome(pptx, s, th, W, H, O, footerText);
+                        drawTitle(pptx, s, th, W, F, (sl.title || title) + (p ? ' (cont.)' : ''), sl.kicker);
+                        await drawContent(pptx, s, th, O, F, pages[p], box);
+                    }
+                    if (sl.notes && p === 0) s.addNotes(sl.notes);
                 }
             }
-            if (O.closing) {
-                const fill = th.dark ? th.accent : th.title, on = th.dark ? th.bg : 'FFFFFF';
-                const cs = pptx.addSlide();
-                cs.background = { color: fill };
-                cs.addText(O.closingText || 'Thank you', { x: 0.8, y: H * 0.3, w: W - 1.6, h: 1.4, fontSize: 48, bold: true, color: on,
-                    fontFace: PPTX_OPTS.headFont || th.head, align: 'center', valign: 'middle', fit: 'shrink' });
-                cs.addShape(pptx.ShapeType.rect, { x: W / 2 - 0.6, y: H * 0.3 + 1.5, w: 1.2, h: 0.07, fill: { color: th.dark ? th.bg : th.accent }, line: { width: 0 } });
-                const who = [DOC_META.author, DOC_META.company].filter(Boolean).join('  ·  ');
-                if (who) cs.addText(who, { x: 0.8, y: H * 0.3 + 1.75, w: W - 1.6, h: 0.5, fontSize: 16, color: on, fontFace: PPTX_OPTS.bodyFont || th.body, align: 'center' });
+            if (O.closing) drawClosing(pptx, th, W, H, O);
+            return { pptx, title };
+        }
+
+        async function markdownToPptx(markdown) {
+            if (typeof PptxGenJS === 'undefined') throw new Error('PowerPoint library did not load — check your connection');
+            const { pptx, title } = await buildDeck(markdown, PPTX_OPTS);
+            const fileName = (title.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'presentation') + '.pptx';
+            if (PPTX_OPTS.transition && PPTX_OPTS.transition !== 'none' && typeof JSZip !== 'undefined') {
+                const buf = await pptx.write({ outputType: 'arraybuffer' });
+                const blob = await addTransitions(buf, PPTX_OPTS.transition);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = fileName;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+            } else {
+                await pptx.writeFile({ fileName });
             }
-            const fileName = title.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'presentation';
-            await pptx.writeFile({ fileName: fileName + '.pptx' });
+        }
+
+        // ===== DECK CHECK (lint the markdown before export) =====
+        function lintDeck(md) {
+            const { cover, slides } = pptxParse(md);
+            const out = [];
+            const words = t => t.replace(/[*_`$#>|-]/g, ' ').split(/\s+/).filter(Boolean).length;
+            if (!cover) out.push({ lvl: 'warn', where: 'Deck', msg: 'No "# Title" line — the deck will have no cover slide.' });
+            const content = slides.filter(s => s.kind !== 'section');
+            if (content.length > 25) out.push({ lvl: 'info', where: 'Deck', msg: content.length + ' content slides — about ' + content.length * 2 + ' minutes. Consider splitting.' });
+            let plainRun = 0;
+            content.forEach(s => {
+                const where = s.title || '(untitled slide)';
+                if (!s.title) out.push({ lvl: 'warn', where, msg: 'Slide has no title.' });
+                else if (words(s.title) > 8) out.push({ lvl: 'warn', where, msg: 'Title has ' + words(s.title) + ' words — keep it to 6–8.' });
+                if (/^(introduction|overview|details|summary|misc|other|notes?|a quote)$/i.test(s.title)) out.push({ lvl: 'info', where, msg: 'Generic title — state the point instead (e.g. "Controls deliver most savings").' });
+                if (!s.blocks.length) out.push({ lvl: 'warn', where, msg: 'Empty slide.' });
+                let wc = 0, plain = false;
+                s.blocks.forEach(b => {
+                    if (b.t === 'para') { wc += words(b.text); if (words(b.text) > 30) out.push({ lvl: 'warn', where, msg: 'Paragraph of ' + words(b.text) + ' words — slides read best under 25. Move detail to <!-- notes: … -->.' }); }
+                    if (b.t === 'bullets') {
+                        const top = b.items.filter(i => i.level === 0);
+                        b.items.forEach(i => { wc += words(i.text); });
+                        if (top.length > 6) out.push({ lvl: 'warn', where, msg: top.length + ' bullets — use 6 or fewer, or split with <!-- slide -->.' });
+                        const long = b.items.filter(i => words(i.text) > 15).length;
+                        if (long) out.push({ lvl: 'info', where, msg: long + ' bullet(s) over 15 words.' });
+                        if (!smartKind(b)) plain = true;
+                    }
+                    if (b.t === 'table') {
+                        if (b.rows.length > 8) out.push({ lvl: 'warn', where, msg: 'Table has ' + (b.rows.length - 1) + ' rows — it will continue on extra slides. Add <!-- chart: bar --> or trim.' });
+                        if (b.rows[0].length > 6) out.push({ lvl: 'warn', where, msg: 'Table has ' + b.rows[0].length + ' columns — hard to read on a slide.' });
+                        if (!b.chart && tableToChart(b) && b.rows.length >= 3) out.push({ lvl: 'tip', where, msg: 'Numeric table — put <!-- chart: bar --> (or line / pie) above it for a native chart.' });
+                    }
+                    if (b.t === 'code' && b.text.split('\n').length > 14) out.push({ lvl: 'warn', where, msg: 'Code block over 14 lines.' });
+                });
+                if (wc > 80) out.push({ lvl: 'warn', where, msg: 'About ' + wc + ' words on one slide — aim for under 50.' });
+                if (s.blocks.length > 3) out.push({ lvl: 'info', where, msg: s.blocks.length + ' elements on one slide — consider splitting.' });
+                plainRun = plain ? plainRun + 1 : 0;
+                if (plainRun === 3) out.push({ lvl: 'tip', where, msg: 'Third plain-bullet slide in a row — try "- **Term**: …" cards, numbered steps or stats for variety.' });
+                if (!s.notes && wc > 40) out.push({ lvl: 'tip', where, msg: 'Wordy slide with no speaker notes — move detail into <!-- notes: … -->.' });
+            });
+            return { out, slides: content.length, sections: slides.length - content.length };
+        }
+
+        // ===== POWERPOINT ANALYZER (template → theme, deck → report + markdown) =====
+        function xmlAttr(x, re) { const m = x.match(re); return m ? m[1] : ''; }
+        function xmlText(s) { return s.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'"); }
+        async function analyzePptx(file) {
+            const zip = await JSZip.loadAsync(file);
+            const names = Object.keys(zip.files);
+            const res = { name: file.name, theme: null, slides: [], md: '', size: null, masters: 0, layouts: 0, media: 0 };
+            // --- theme ---
+            const themeName = names.find(n => /(^|\/)theme\/theme1\.xml$/.test(n)) || names.find(n => /theme\d*\.xml$/.test(n));
+            if (themeName) {
+                const x = await zip.file(themeName).async('string');
+                const col = tag => {
+                    const m = x.match(new RegExp('<a:' + tag + '>([\\s\\S]*?)</a:' + tag + '>'));
+                    if (!m) return '';
+                    return xmlAttr(m[1], /srgbClr val="([0-9A-Fa-f]{6})"/) || xmlAttr(m[1], /lastClr="([0-9A-Fa-f]{6})"/);
+                };
+                const C = {}; ['dk1', 'lt1', 'dk2', 'lt2', 'accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'].forEach(k => C[k] = (col(k) || '').toUpperCase());
+                const major = xmlAttr(x, /<a:majorFont>\s*<a:latin typeface="([^"]*)"/), minor = xmlAttr(x, /<a:minorFont>\s*<a:latin typeface="([^"]*)"/);
+                const schemeName = xmlAttr(x, /<a:clrScheme name="([^"]*)"/);
+                res.theme = { colors: C, major, minor, scheme: schemeName };
+            }
+            const pres = zip.file('ppt/presentation.xml') ? await zip.file('ppt/presentation.xml').async('string') : '';
+            if (pres) { const cx = +xmlAttr(pres, /<p:sldSz[^>]*cx="(\d+)"/), cy = +xmlAttr(pres, /<p:sldSz[^>]*cy="(\d+)"/); if (cx && cy) res.size = { w: cx / 914400, h: cy / 914400 }; }
+            res.masters = names.filter(n => /^ppt\/slideMasters\/slideMaster\d+\.xml$/.test(n)).length;
+            res.layouts = names.filter(n => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(n)).length;
+            res.media = names.filter(n => /^ppt\/media\//.test(n)).length;
+            // --- slides in order ---
+            const order = names.filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((p, q) => +p.match(/(\d+)\.xml/)[1] - +q.match(/(\d+)\.xml/)[1]);
+            const raw = [];
+            for (let i = 0; i < order.length; i++) {
+                const x = await zip.file(order[i]).async('string');
+                const shapes = [];
+                const sizes = [];
+                for (const sp of x.split(/<p:sp>|<p:sp /).slice(1)) {
+                    const ph = xmlAttr(sp, /<p:ph[^>]*type="([^"]+)"/) || (/<p:ph[ \/>]/.test(sp) ? 'body' : '');
+                    if (ph === 'sldNum' || ph === 'ftr' || ph === 'dt') continue;
+                    let maxSz = 0;
+                    const paras = sp.split('<a:p>').slice(1).map(p => {
+                        const lvl = +xmlAttr(p, /<a:pPr[^>]*lvl="(\d)"/) || 0;
+                        (p.match(/ sz="(\d+)"/g) || []).forEach(z => { const v = +z.match(/\d+/)[0] / 100; sizes.push(v); maxSz = Math.max(maxSz, v); });
+                        const t = (p.match(/<a:t>([\s\S]*?)<\/a:t>/g) || []).map(xmlText).join('').trim();
+                        return { lvl, t };
+                    }).filter(p => p.t);
+                    if (paras.length) shapes.push({ ph, paras, maxSz });
+                }
+                let notes = '';
+                const relF = zip.file(order[i].replace('slides/', 'slides/_rels/') + '.rels');
+                if (relF) {
+                    const nt = xmlAttr(await relF.async('string'), /Target="\.\.\/notesSlides\/(notesSlide\d+\.xml)"/);
+                    if (nt && zip.file('ppt/notesSlides/' + nt)) {
+                        const nx = await zip.file('ppt/notesSlides/' + nt).async('string');
+                        notes = nx.split(/<p:sp>|<p:sp /).filter(t => /type="body"/.test(t)).map(t => (t.match(/<a:t>([\s\S]*?)<\/a:t>/g) || []).map(xmlText).join(' ')).join(' ').trim();
+                    }
+                }
+                raw.push({ x, shapes, sizes, notes });
+            }
+            // text that repeats on most slides is a footer / watermark
+            const freq = {};
+            raw.forEach(r => new Set(r.shapes.map(s => s.paras.map(p => p.t).join(' '))).forEach(t => { freq[t] = (freq[t] || 0) + 1; }));
+            const isRepeat = t => raw.length >= 3 && freq[t] >= Math.max(3, raw.length * 0.5);
+            const md = [];
+            raw.forEach((r, i) => {
+                const shapes = i === 0 ? r.shapes : r.shapes.filter(s => !isRepeat(s.paras.map(p => p.t).join(' ')));
+                let tIdx = shapes.findIndex(s => s.ph === 'title' || s.ph === 'ctrTitle');
+                if (tIdx < 0 && shapes.length) { const ok = s => s.paras.map(p => p.t).join('').length >= 3; const mx = Math.max(0, ...shapes.filter(ok).map(s => s.maxSz)); tIdx = shapes.findIndex(s => ok(s) && s.maxSz === mx); }
+                const title = tIdx >= 0 ? shapes[tIdx].paras.map(p => p.t).join(' ') : '';
+                const body = shapes.filter((s, k) => k !== tIdx).flatMap(s => s.paras);
+                const pics = (r.x.match(/<p:pic>/g) || []).length, charts = (r.x.match(/c:chart /g) || []).length, tables = (r.x.match(/<a:tbl>/g) || []).length;
+                const words = body.reduce((a2, p) => a2 + p.t.split(/\s+/).length, 0);
+                res.slides.push({ n: i + 1, title, words, bullets: body.length, pics, charts, tables, notes: !!r.notes,
+                    minFont: r.sizes.length ? Math.min(...r.sizes) : null, maxFont: r.sizes.length ? Math.max(...r.sizes) : null });
+                if (i === 0) { md.push('# ' + (title || 'Presentation')); if (body[0]) md.push(body[0].t); md.push(''); return; }
+                md.push('### ' + (title || 'Slide ' + (i + 1)));
+                body.forEach(p => md.push('    '.repeat(Math.min(3, p.lvl)) + '- ' + p.t));
+                if (pics) md.push('', '![Picture from original slide ' + (i + 1) + ']()');
+                if (r.notes) md.push('<!-- notes: ' + r.notes.replace(/-->/g, '—>').replace(/\s+/g, ' ') + ' -->');
+                md.push('');
+            });
+            res.md = md.join('\n');
+            return res;
+        }
+        function themeFromAnalysis(a) {
+            const C = a.theme.colors;
+            const dk = C.dk2 && pxLum(C.dk2) < 0.45 ? C.dk2 : (C.dk1 || '1F1F1F');
+            const accent = C.accent1 || '2E75B6';
+            const bg = C.lt1 && pxLum(C.lt1) > 0.75 ? C.lt1 : 'FFFFFF';
+            const title = pxLum(dk) < 0.12 && pxLum(accent) < 0.5 ? accent : dk;
+            return {
+                name: 'My template' + (a.theme.scheme ? ' (' + a.theme.scheme + ')' : ''),
+                bg, title, accent: title === accent ? (C.accent2 || accent) : accent,
+                text: C.dk1 && pxLum(C.dk1) < 0.4 ? C.dk1 : '262626', muted: pxMix(C.dk1 || '262626', bg, 0.55),
+                head: a.theme.major || 'Calibri', body: a.theme.minor || 'Calibri',
+                bar: 'rule', cover: 'split', motif: 'circles',
+                palette: ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'].map(k => C[k]).filter(Boolean)
+            };
         }
 
         (function initPptxUi() {
             const $ = id => document.getElementById(id);
+            const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
             const grid = $('ptGrid');
             function renderGrid() {
                 grid.innerHTML = '';
@@ -5244,27 +5910,151 @@ FINISH WITH
                     b.type = 'button';
                     b.className = 'pt-card' + (PPTX_OPTS.theme === key ? ' is-on' : '');
                     b.title = t.name + ' — ' + t.head + ' / ' + t.body;
-                    const bar = t.bar === 'band' ? '<i style="position:absolute;left:0;right:0;top:0;height:22%;background:#' + t.title + '"></i>'
-                              : t.bar === 'side' ? '<i style="position:absolute;left:0;top:0;bottom:0;width:6%;background:#' + t.accent + '"></i>'
-                              : t.bar === 'rule' ? '<i style="position:absolute;left:10%;right:10%;top:26%;height:2px;background:#' + t.accent + '"></i>'
-                              : '<i style="position:absolute;left:10%;top:26%;width:18%;height:3px;background:#' + t.accent + '"></i>';
-                    b.innerHTML = '<span class="pt-mini" style="background:#' + t.bg + '">' + bar
-                        + '<em style="color:#' + (t.bar === 'band' ? (t.dark ? t.bg : 'FFFFFF') : t.title) + ';font-family:' + t.head + '">Aa</em>'
-                        + '<s style="background:#' + t.text + '"></s><s style="background:#' + t.muted + ';width:45%"></s></span>'
-                        + '<span class="pt-name">' + t.name + '</span>';
+                    const strong = t.dark ? t.accent : t.title;
+                    b.innerHTML = '<span class="pt-mini" style="background:#' + t.bg + '">'
+                        + '<i style="position:absolute;left:0;top:0;bottom:0;width:38%;background:#' + strong + '"></i>'
+                        + '<i style="position:absolute;right:8%;bottom:14%;width:22%;aspect-ratio:1;border-radius:50%;background:#' + t.accent + ';opacity:.55"></i>'
+                        + '<em style="color:#' + (pxLum(strong) > 0.6 ? '111' : 'fff') + ';font-family:' + t.head + '">Aa</em>'
+                        + '<s style="background:#' + t.text + ';left:46%;width:30%"></s><s style="background:#' + t.muted + ';left:46%;width:20%"></s></span>'
+                        + '<span class="pt-name">' + (key === 'custom' ? '★ ' : '') + esc(t.name) + '</span>';
                     b.addEventListener('click', () => { PPTX_OPTS.theme = key; savePptxOpts(); renderGrid(); });
                     grid.appendChild(b);
                 }
             }
+            const binds = [];
             const bind = (id, key, conv) => {
                 const el = $(id); if (!el) return;
-                if (el.type === 'checkbox') el.checked = !!PPTX_OPTS[key]; else el.value = PPTX_OPTS[key];
+                const load = () => { if (el.type === 'checkbox') el.checked = !!PPTX_OPTS[key]; else el.value = PPTX_OPTS[key] == null ? '' : PPTX_OPTS[key]; };
+                load(); binds.push(load);
                 el.addEventListener('change', () => { PPTX_OPTS[key] = el.type === 'checkbox' ? el.checked : (conv ? conv(el.value) : el.value); savePptxOpts(); });
             };
-            bind('ptRatio', 'ratio'); bind('ptSize', 'bodySize', v => Math.min(28, Math.max(12, parseInt(v, 10) || 18)));
-            bind('ptNums', 'slideNumbers'); bind('ptSmart', 'smart'); bind('ptAgenda', 'agenda'); bind('ptClosing', 'closing'); bind('ptClosingText', 'closingText', v => v.trim()); bind('ptBullet', 'bullet'); bind('ptFooter', 'footer'); bind('ptMeta', 'coverMeta');
-            bind('ptHead', 'headFont', v => v.trim()); bind('ptBody', 'bodyFont', v => v.trim());
+            [['ptRatio', 'ratio'], ['ptDensity', 'density'], ['ptTitleStyle', 'titleStyle'], ['ptCoverStyle', 'coverStyle'], ['ptCardStyle', 'cardStyle'],
+             ['ptMotif', 'motif'], ['ptBullet', 'bullet'], ['ptSmart', 'smart'], ['ptTransition', 'transition'], ['ptIcons', 'icons'], ['ptCharts', 'charts'],
+             ['ptVcenter', 'vcenter'], ['ptAgenda', 'agenda'], ['ptClosing', 'closing'], ['ptNums', 'slideNumbers'], ['ptFooter', 'footer'], ['ptMeta', 'coverMeta']
+            ].forEach(([id, k]) => bind(id, k));
+            bind('ptHead', 'headFont', v => v.trim()); bind('ptBody', 'bodyFont', v => v.trim()); bind('ptClosingText', 'closingText', v => v.trim());
             renderGrid();
+            $('ptIconList').innerHTML = Object.keys(PPTX_ICONS).map(n => '<code>' + n + '</code>').join(' ');
+
+            $('ptReset').addEventListener('click', () => {
+                const keepTheme = PPTX_OPTS.theme;
+                PPTX_OPTS = Object.assign({}, PPTX_DEFAULTS, { theme: keepTheme });
+                savePptxOpts(); binds.forEach(f => f()); renderGrid();
+                showMessage('Slide settings reset', 'success');
+            });
+
+            // --- brand: template + logo ---
+            const brand = $('ptBrandReport');
+            function showBrand() {
+                const parts = [];
+                if (PPTX_THEMES.custom) {
+                    const t = PPTX_THEMES.custom;
+                    parts.push('<b>' + esc(t.name) + '</b> is in the theme grid (★). Fonts: ' + esc(t.head) + ' / ' + esc(t.body) + '. Colours: '
+                        + [t.title, t.accent].concat(t.palette || []).map(c => '<span class="pt-sw" style="background:#' + c + '" title="#' + c + '"></span>').join('')
+                        + ' <button type="button" class="tb" id="ptTplClear" style="padding:2px 8px">✕ remove</button>');
+                }
+                if (PPTX_LOGO) parts.push('Logo: <img src="data:' + PPTX_LOGO.data + '" style="height:22px;vertical-align:middle;background:#f3f4f6;padding:2px;border-radius:4px"> placed on the cover, titles and closing slide.');
+                brand.innerHTML = parts.join('<br>');
+                const c = $('ptTplClear');
+                if (c) c.addEventListener('click', () => {
+                    delete PPTX_THEMES.custom; try { localStorage.removeItem('pptx_custom_theme_v1'); } catch (e) {}
+                    if (PPTX_OPTS.theme === 'custom') { PPTX_OPTS.theme = 'navy'; savePptxOpts(); }
+                    renderGrid(); showBrand();
+                });
+            }
+            showBrand();
+            $('ptTplFile').addEventListener('change', async e => {
+                const f = e.target.files[0]; e.target.value = '';
+                if (!f) return;
+                try {
+                    const a = await analyzePptx(f);
+                    if (!a.theme) throw new Error('no theme found in this file');
+                    const t = themeFromAnalysis(a);
+                    PPTX_THEMES.custom = t;
+                    try { localStorage.setItem('pptx_custom_theme_v1', JSON.stringify(t)); } catch (er) {}
+                    PPTX_OPTS.theme = 'custom';
+                    if (a.size) { const r = a.size.w / a.size.h; PPTX_OPTS.ratio = r > 1.7 ? '16:9' : r > 1.5 ? '16:10' : '4:3'; }
+                    savePptxOpts(); binds.forEach(fn => fn()); renderGrid(); showBrand();
+                    showMessage('✓ Template colours and fonts loaded from ' + f.name, 'success');
+                } catch (er) { showMessage('Could not read template: ' + er.message, 'error'); }
+            });
+            $('ptLogoFile').addEventListener('change', e => {
+                const f = e.target.files[0]; e.target.value = '';
+                if (!f) return;
+                const fr = new FileReader();
+                fr.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        // normalise to PNG, max 600 px wide, so it stays small in storage
+                        const sc = Math.min(1, 600 / img.naturalWidth);
+                        const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+                        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                        PPTX_LOGO = { data: c.toDataURL('image/png').replace(/^data:/, ''), w: c.width, h: c.height };
+                        try { localStorage.setItem('pptx_logo_v1', JSON.stringify(PPTX_LOGO)); } catch (er) { showMessage('Logo is used now but too large to remember next visit', 'error'); }
+                        showBrand(); showMessage('✓ Logo added', 'success');
+                    };
+                    img.src = fr.result;
+                };
+                fr.readAsDataURL(f);
+            });
+            $('ptLogoClear').addEventListener('click', () => { PPTX_LOGO = null; try { localStorage.removeItem('pptx_logo_v1'); } catch (e) {} showBrand(); });
+
+            // --- tools ---
+            const rep = $('ptToolReport');
+            $('ptLint').addEventListener('click', () => {
+                const md = editor.value.trim();
+                if (!md) { rep.innerHTML = 'The editor is empty.'; return; }
+                const r = lintDeck(md);
+                const ic = { warn: '⚠️', info: 'ℹ️', tip: '💡' };
+                const head = '<b>' + r.slides + ' content slides, ' + r.sections + ' sections.</b> ';
+                rep.innerHTML = r.out.length
+                    ? head + r.out.filter(o => o.lvl === 'warn').length + ' warnings, ' + r.out.filter(o => o.lvl !== 'warn').length + ' suggestions.<ul>'
+                      + r.out.map(o => '<li>' + ic[o.lvl] + ' <b>' + esc(o.where) + '</b> — ' + esc(o.msg) + '</li>').join('') + '</ul>'
+                    : head + '✅ No problems found — ready to export.';
+            });
+            $('ptAnalyzeFile').addEventListener('change', async e => {
+                const f = e.target.files[0]; e.target.value = '';
+                if (!f) return;
+                rep.innerHTML = 'Reading ' + esc(f.name) + '…';
+                try {
+                    const a = await analyzePptx(f);
+                    const S = a.slides;
+                    const avgW = S.length ? Math.round(S.reduce((x, s) => x + s.words, 0) / S.length) : 0;
+                    const heavy = S.filter(s => s.words > 60), small = S.filter(s => s.minFont && s.minFont < 14), noNotes = S.filter(s => !s.notes).length;
+                    const visual = S.filter(s => s.pics || s.charts || s.tables).length;
+                    let h = '<b>' + esc(a.name) + '</b> — ' + S.length + ' slides'
+                        + (a.size ? ', ' + a.size.w.toFixed(2) + '×' + a.size.h.toFixed(2) + ' in' : '') + ', ' + a.layouts + ' layouts, ' + a.media + ' media files.<br>'
+                        + 'Average ' + avgW + ' words per slide · ' + visual + ' of ' + S.length + ' slides have a picture, chart or table · ' + noNotes + ' without speaker notes.';
+                    if (a.theme) h += '<br>Theme fonts: ' + esc(a.theme.major || '?') + ' / ' + esc(a.theme.minor || '?') + ' · colours '
+                        + ['dk2', 'accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'].map(k => a.theme.colors[k]).filter(Boolean).map(c => '<span class="pt-sw" style="background:#' + c + '"></span>').join('');
+                    const tips = [];
+                    if (heavy.length) tips.push('⚠️ Text-heavy (over 60 words): slides ' + heavy.map(s => s.n).join(', ') + '.');
+                    if (small.length) tips.push('⚠️ Text under 14 pt: slides ' + small.map(s => s.n).join(', ') + '.');
+                    if (S.length && visual / S.length < 0.3) tips.push('💡 Few visuals — under a third of slides have a picture, chart or table.');
+                    if (noNotes > S.length / 2) tips.push('💡 Most slides have no speaker notes.');
+                    if (tips.length) h += '<ul>' + tips.map(t => '<li>' + t + '</li>').join('') + '</ul>';
+                    h += '<table class="pt-tbl"><tr><th>#</th><th>Title</th><th>Words</th><th>Items</th><th>Visuals</th><th>Font pt</th></tr>'
+                        + S.map(s => '<tr' + (s.words > 60 ? ' class="hot"' : '') + '><td>' + s.n + '</td><td>' + esc((s.title || '').slice(0, 50)) + '</td><td>' + s.words + '</td><td>' + s.bullets
+                            + '</td><td>' + ((s.pics ? '🖼' + s.pics + ' ' : '') + (s.charts ? '📊' + s.charts + ' ' : '') + (s.tables ? '▦' + s.tables : '')) + '</td><td>'
+                            + (s.minFont ? s.minFont + (s.maxFont !== s.minFont ? '–' + s.maxFont : '') : '—') + '</td></tr>').join('') + '</table>';
+                    h += '<div class="ds-import-actions" style="margin-top:8px"><button type="button" class="tb primary" id="ptToMd">✏️ Load as markdown (restyle it here)</button>'
+                        + (a.theme ? '<button type="button" class="tb" id="ptUseTheme">🎨 Use its colours &amp; fonts</button>' : '') + '</div>';
+                    rep.innerHTML = h;
+                    $('ptToMd').addEventListener('click', () => {
+                        if (editor.value.trim() && !confirm('Replace the editor content with the text of ' + a.name + '?')) return;
+                        editor.value = a.md; editor.dispatchEvent(new Event('input'));
+                        if (typeof renderPreview === 'function') renderPreview();
+                        showMessage('✓ Deck text loaded — pick a theme and export', 'success');
+                    });
+                    const ut = $('ptUseTheme');
+                    if (ut) ut.addEventListener('click', () => {
+                        const t = themeFromAnalysis(a);
+                        PPTX_THEMES.custom = t; try { localStorage.setItem('pptx_custom_theme_v1', JSON.stringify(t)); } catch (er) {}
+                        PPTX_OPTS.theme = 'custom'; savePptxOpts(); renderGrid(); showBrand();
+                        showMessage('✓ Theme taken from ' + a.name, 'success');
+                    });
+                } catch (er) { rep.innerHTML = 'Could not read this file: ' + esc(er.message); }
+            });
 
             const btn = $('pptxBtn');
             btn.addEventListener('click', async () => {
