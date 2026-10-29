@@ -4832,14 +4832,57 @@ FINISH WITH
         // ---------- text measuring ----------
         const LH = fs => fs * 1.24 / 72;
         let FONT_K = 0.55;   // average glyph width / font size; set per deck (serif fonts run wider)
-        function nLines(text, w, fs) {
+        // Real text measurement in the browser (canvas) when the deck's fonts are installed; estimate otherwise
+        let MEASURE_FONT = 'Calibri', MEASURE_HEAD = 'Calibri';
+        let WORD_OVERFLOW = false;   // set when a single word is wider than its box at the size being tried
+        let _mctx = null;
+        const _fontOk = {};
+        function fontInstalled(name) {
+            if (name in _fontOk) return _fontOk[name];
+            let ok = false;
+            try {
+                const t = 'mmmmmmmmmmlliWW@#0', c = document.createElement('canvas').getContext('2d');
+                ok = ['monospace', 'serif', 'sans-serif'].some(fb => {
+                    c.font = '40px ' + fb; const base = c.measureText(t).width;
+                    c.font = '40px "' + name + '", ' + fb; return c.measureText(t).width !== base;
+                });
+            } catch (e) { ok = false; }
+            return (_fontOk[name] = ok);
+        }
+        function measureW(str, fs, bold) {
+            if (typeof document === 'undefined') return null;
+            const face = bold ? MEASURE_HEAD : MEASURE_FONT;
+            if (!fontInstalled(face)) return null;
+            if (!_mctx) { try { _mctx = document.createElement('canvas').getContext('2d'); } catch (e) { return null; } }
+            if (!_mctx) return null;
+            _mctx.font = (bold ? 'bold ' : '') + fs + 'pt "' + face + '"';
+            return _mctx.measureText(str).width / 96 * 1.06;   // px → inches, small safety margin
+        }
+        function nLines(text, w, fs, bold) {
             const c = String(text || '').replace(/\*\*|__|[*_`$]/g, '');
-            const cpl = Math.max(6, Math.floor(w * 72 / (fs * FONT_K)));
+            if (measureW('M', fs, bold) !== null) {
+                const space = measureW(' ', fs, bold);
+                let total = 0;
+                c.split('\n').forEach(para => {
+                    let lines = 1, cur = 0;
+                    para.split(/\s+/).filter(Boolean).forEach(word => {
+                        const ww = measureW(word, fs, bold);
+                        if (ww > w) WORD_OVERFLOW = true;
+                        if (cur === 0) cur = ww;
+                        else if (cur + space + ww <= w) cur += space + ww;
+                        else { lines++; cur = ww; }
+                    });
+                    total += lines;
+                });
+                return Math.max(1, total);
+            }
+            const cpl = Math.max(6, Math.floor(w * 72 / (fs * FONT_K * (bold ? 1.08 : 1))));
             const longest = Math.max(0, ...c.split(/\s+/).map(x => x.length));
-            const penalty = longest > cpl * 0.92 ? 6 : 0;   // a word that cannot fit gets cut — make this size lose
+            if (longest > cpl * 0.92) WORD_OVERFLOW = true;
+            const penalty = 0;
             return c.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / cpl)), 0) + penalty;
         }
-        function textH(text, w, fs) { return nLines(text, w, fs) * LH(fs); }
+        function textH(text, w, fs, bold) { return nLines(text, w, fs, bold) * LH(fs); }
 
         // ---------- icons (24×24 line icons, drawn here, rendered to PNG at export) ----------
         const PPTX_ICONS = {
@@ -5166,7 +5209,7 @@ FINISH WITH
             const R = () => null;
 
             if (kind === 'cards' || kind === 'icons') {
-                const short = top.every(i => (splitTerm(i.text) || { desc: i.text }).desc.length <= 70);
+                const short = top.every(i => { const t = splitTerm(i.text) || { term: '', desc: i.text }; return t.desc.length <= 70 && Math.max(0, ...t.term.split(/\s+/).map(x => x.length)) <= 9; });
                 const cols = n <= 3 ? n : (n === 4 ? (short ? 4 : 2) : 3);
                 const rows = Math.ceil(n / cols), g = 0.3;
                 const cw = (w - g * (cols - 1)) / cols;
@@ -5178,7 +5221,7 @@ FINISH WITH
                 const vertical = cols >= 3 || kind === 'icons';   // icon on top
                 const innerW = cw - 0.6;
                 const itemH = items.map(({ tm }) => {
-                    const headH = tm.term ? textH(tm.term, vertical ? innerW : innerW - ic - 0.2, F.head) : 0;
+                    const headH = tm.term ? textH(tm.term, vertical ? innerW : innerW - ic - 0.2, F.head, true) : 0;
                     const descH = tm.desc ? textH(tm.desc, innerW, kind === 'icons' ? F.body - 1 : F.desc) : 0;
                     return vertical ? 0.32 + (ic ? ic + 0.22 : 0) + headH + (tm.term && tm.desc ? 0.12 : 0) + descH + 0.34
                                     : 0.3 + Math.max(ic, headH) + (tm.desc ? 0.14 + descH : 0) + 0.32;
@@ -5197,12 +5240,12 @@ FINISH WITH
                         let ty = cy + 0.3;
                         if (vertical) {
                             if (ic) { await iconBadge(pptx, s, icon, cx + 0.3, ty, ic, col.badge, col.onBadge, O.cardStyle === 'outline' ? 'square' : 'circle'); ty += ic + 0.22; }
-                            if (tm.term) { const hh = textH(tm.term, innerW, F.head); s.addText(tm.term, { x: cx + 0.3, y: ty, w: innerW, h: hh, fontFace: th.head, fontSize: F.head, bold: true, color: col.head, valign: 'top', margin: 0 }); ty += hh + 0.12; }
+                            if (tm.term) { const hh = textH(tm.term, innerW, F.head, true); s.addText(tm.term, { x: cx + 0.3, y: ty, w: innerW, h: hh, fontFace: th.head, fontSize: F.head, bold: true, color: col.head, valign: 'top', margin: 0 }); ty += hh + 0.12; }
                             if (tm.desc) s.addText(runs(tm.desc, { color: col.text, fontSize: kind === 'icons' ? F.body - 1 : F.desc, boldColor: col.head }), { x: cx + 0.3, y: ty, w: innerW, h: Math.max(0.3, cy + ch - ty - 0.25), valign: 'top', margin: 0 });
                         } else {
                             const hx = cx + 0.3 + (ic ? ic + 0.2 : 0), hw = innerW - (ic ? ic + 0.2 : 0);
                             if (ic) await iconBadge(pptx, s, icon, cx + 0.3, ty, ic, col.badge, col.onBadge, O.cardStyle === 'outline' ? 'square' : 'circle');
-                            const hh = Math.max(ic, textH(tm.term, hw, F.head));
+                            const hh = Math.max(ic, textH(tm.term, hw, F.head, true));
                             s.addText(tm.term, { x: hx, y: ty, w: hw, h: hh, fontFace: th.head, fontSize: F.head, bold: true, color: col.head, valign: 'middle', margin: 0 });
                             ty += hh + 0.14;
                             if (tm.desc) s.addText(runs(tm.desc, { color: col.text, boldColor: col.head }), { x: cx + 0.3, y: ty, w: innerW, h: Math.max(0.3, cy + ch - ty - 0.25), valign: 'top', margin: 0 });
@@ -5214,13 +5257,13 @@ FINISH WITH
             if (kind === 'process') {
                 const g = 0.1, cw = (w - g * (n - 1)) / n, chH = 0.9;
                 const items = top.map(it => splitTerm(it.text) || { term: clean(it.text), desc: '' });
-                const below = Math.max(...items.map(t => textH(t.term, cw - 0.25, F.head) + (t.desc ? 0.1 + textH(t.desc, cw - 0.25, F.desc) : 0)));
+                const below = Math.max(...items.map(t => textH(t.term, cw - 0.25, F.head, true) + (t.desc ? 0.1 + textH(t.desc, cw - 0.25, F.desc) : 0)));
                 return { h: chH + 0.3 + below, draw: async (pptx, s, x, y) => {
                     items.forEach((t, k) => {
                         const cx = x + k * (cw + g), fill = k % 2 ? th.alt : th.strong;
                         s.addText(String(k + 1).padStart(2, '0'), { shape: k ? pptx.ShapeType.chevron : pptx.ShapeType.homePlate, x: cx, y, w: cw, h: chH,
                             fill: { color: fill }, line: { color: fill }, color: pxLum(fill) > 0.6 ? '111111' : 'FFFFFF', fontFace: th.head, fontSize: 22, bold: true, align: 'center', valign: 'middle' });
-                        const hh = textH(t.term, cw - 0.25, F.head);
+                        const hh = textH(t.term, cw - 0.25, F.head, true);
                         s.addText(t.term, { x: cx + 0.08, y: y + chH + 0.3, w: cw - 0.25, h: hh, fontFace: th.head, fontSize: F.head, bold: true, color: th.title, valign: 'top', margin: 0 });
                         if (t.desc) s.addText(runs(t.desc), { x: cx + 0.08, y: y + chH + 0.4 + hh, w: cw - 0.25, h: textH(t.desc, cw - 0.25, F.desc) + 0.1, valign: 'top', margin: 0 });
                     });
@@ -5245,7 +5288,7 @@ FINISH WITH
             if (kind === 'timeline') {
                 const seg = w / n;
                 const items = top.map(it => { const tm = splitTerm(it.text); return tm ? tm : { term: clean(it.text).split(/\s+/).slice(0, 2).join(' '), desc: clean(it.text).split(/\s+/).slice(2).join(' ') }; });
-                const lab = Math.max(...items.map(t => textH(t.term, seg - 0.2, F.head + 2)));
+                const lab = Math.max(...items.map(t => textH(t.term, seg - 0.2, F.head + 2, true)));
                 const desc = Math.max(...items.map(t => t.desc ? textH(t.desc, seg - 0.3, F.desc) : 0));
                 const ly = lab + 0.35;
                 return { h: ly + 0.45 + desc, draw: async (pptx, s, x, y) => {
@@ -5555,7 +5598,8 @@ FINISH WITH
             const measure = G => page.blocks.map(b => blockH(b, tw, G, th, O)).reduce((a, v) => a + v, 0) + 0.3 * Math.max(0, page.blocks.length - 1);
             const scaleF = k => ({ title: F.title, body: Math.round(F.body * k), head: Math.round(F.head * k), desc: Math.round(F.desc * k), small: Math.round(F.small * k) });
             if (O.vcenter !== false && page.blocks.length && !page.blocks.some(b => b.t === 'code' || b.t === 'table')) {
-                for (const k of [1.45, 1.35, 1.25, 1.15, 1.08]) { const G = scaleF(k); if (measure(G) <= box.h * 0.82) { F = G; break; } }
+                for (const k of [1.45, 1.35, 1.25, 1.15, 1.08]) { const G = scaleF(k); WORD_OVERFLOW = false; const hh = measure(G); if (!WORD_OVERFLOW && hh <= box.h * 0.82) { F = G; break; } }
+                WORD_OVERFLOW = false;
             }
             const hs = page.blocks.map(b => blockH(b, tw, F, th, O));
             const total = hs.reduce((a, v) => a + v, 0) + 0.3 * Math.max(0, hs.length - 1);
@@ -5696,7 +5740,7 @@ FINISH WITH
         }
 
         // ---------- transitions (PptxGenJS has none: add them to the slide XML) ----------
-        async function finishDeck(buf, kind) {
+        async function finishDeck(buf, kind, bulletColor) {
             const X = { fade: '<p:fade/>', push: '<p:push dir="u"/>', wipe: '<p:wipe dir="r"/>', cover: '<p:cover dir="l"/>', split: '<p:split orient="vert" dir="out"/>' }[kind];
             const zip = await JSZip.loadAsync(buf);
             const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n));
@@ -5704,6 +5748,8 @@ FINISH WITH
                 let x = await zip.file(n).async('string');
                 let id = 1;
                 x = x.replace(/<p:cNvPr id="\d+"/g, () => '<p:cNvPr id="' + (++id) + '"');
+                // PptxGenJS 3.12 drops bullet colours: give every bullet the theme accent
+                if (bulletColor) x = x.replace(/(<a:buSzPct val="\d+"\/>)?<a:buChar /g, m => '<a:buClr><a:srgbClr val="' + bulletColor + '"/></a:buClr>' + m);
                 if (!X || x.includes('<p:transition')) { zip.file(n, x); continue; }
                 const t = '<p:transition spd="med">' + X + '</p:transition>';
                 if (x.includes('<p:timing')) x = x.replace('<p:timing', t + '<p:timing');
@@ -5717,6 +5763,7 @@ FINISH WITH
         async function buildDeck(markdown, O) {
             const th = getDeckTheme(O), F = deckFonts(O);
             FONT_K = /georgia|times|cambria|garamond|book|serif|palatino/i.test(th.head + th.body) ? 0.62 : 0.56;
+            MEASURE_FONT = th.body; MEASURE_HEAD = th.head;
             const pptx = new PptxGenJS();
             const LAY = { '16:9': ['LAYOUT_WIDE', 13.333, 7.5], '4:3': ['LAYOUT_4x3', 10, 7.5], '16:10': ['LAYOUT_16x10', 10, 6.25] }[O.ratio] || ['LAYOUT_WIDE', 13.333, 7.5];
             pptx.layout = LAY[0];
@@ -5760,7 +5807,7 @@ FINISH WITH
             const fileName = (title.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'presentation') + '.pptx';
             if (typeof JSZip !== 'undefined') {
                 const buf = await pptx.write({ outputType: 'arraybuffer' });
-                const blob = await finishDeck(buf, PPTX_OPTS.transition);
+                const blob = await finishDeck(buf, PPTX_OPTS.transition, getDeckTheme(PPTX_OPTS).accent);
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob); a.download = fileName;
                 document.body.appendChild(a); a.click(); a.remove();
