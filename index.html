@@ -1263,8 +1263,8 @@ FINISH WITH
                 <div class="ds-fieldset">
                     <div class="ds-legend">Brand — your default template and logo</div>
                     <div class="ds-import-actions">
-                        <input type="file" id="ptTplFile" accept=".pptx,.potx,.thmx" hidden>
-                        <label for="ptTplFile" class="tb primary">🎨 Use my PowerPoint template</label>
+                        <input type="file" id="ptTplFile" accept=".pptx,.potx" hidden>
+                        <label for="ptTplFile" class="tb primary">🎨 Use my PowerPoint template (.pptx / .potx)</label>
                         <input type="file" id="ptLogoFile" accept="image/png,image/jpeg,image/svg+xml" hidden>
                         <label for="ptLogoFile" class="tb">🏷 Add logo</label>
                         <button type="button" id="ptLogoClear" class="tb">✕ Remove logo</button>
@@ -4784,7 +4784,7 @@ FINISH WITH
             titleStyle: 'theme', coverStyle: 'theme', cardStyle: 'soft', motif: 'theme',
             smart: 'auto', icons: true, charts: true, vcenter: true, bullet: 'auto', transition: 'fade',
             agenda: true, closing: true, closingText: 'Thank you', slideNumbers: true, footer: true, coverMeta: true,
-            headFont: '', bodyFont: ''
+            headFont: '', bodyFont: '', useMasters: true
         };
         let PPTX_OPTS = Object.assign({}, PPTX_DEFAULTS);
         try { Object.assign(PPTX_OPTS, JSON.parse(localStorage.getItem('pptx_opts_v1') || '{}')); } catch (e) {}
@@ -4805,8 +4805,8 @@ FINISH WITH
         }
         function pxLum(h) { const v = [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16) / 255); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }
 
-        function getDeckTheme(O) {
-            const th = Object.assign({}, PPTX_THEMES[O.theme] || PPTX_THEMES.navy);
+        function getDeckTheme(O, over) {
+            const th = Object.assign({}, PPTX_THEMES[O.theme] || PPTX_THEMES.navy, over || {});
             if (O.titleStyle && O.titleStyle !== 'theme') th.bar = O.titleStyle;
             if (O.coverStyle && O.coverStyle !== 'theme') th.cover = O.coverStyle;
             if (O.motif && O.motif !== 'theme') th.motif = O.motif;
@@ -5432,7 +5432,7 @@ FINISH WITH
             if (b.t === 'code') return take(b.text.split('\n'), l => ({ t: 'code', text: l.join('\n') }), 3);
             return null;
         }
-        function bodyBox(W, H) { return { x: 0.65, y: 1.62, w: W - 1.3, h: H - 1.62 - 0.72 }; }
+        function bodyBox(W, H) { return TPL ? Object.assign({}, TPL.geo.box) : { x: 0.65, y: 1.62, w: W - 1.3, h: H - 1.62 - 0.72 }; }
         function paginate(slide, W, H, O, th, F) {
             const box = bodyBox(W, H);
             const pages = [];
@@ -5496,12 +5496,14 @@ FINISH WITH
             s.addImage({ data: PPTX_LOGO.data, x: f.x + (maxW - f.w) / 2, y: f.y, w: f.w, h: f.h });
         }
         function drawChrome(pptx, s, th, W, H, O, footerText) {
+            if (TPL) return tplChrome(pptx, s, th, W, H, O, footerText);
             s.background = { color: th.bg };
             if (th.bar === 'side') s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.18, h: H, fill: { color: th.accent }, line: { color: th.accent } });
             if (O.footer && footerText) s.addText(footerText, { x: 0.65, y: H - 0.48, w: W * 0.6, h: 0.3, fontSize: 10, color: th.muted, fontFace: th.body, margin: 0 });
             if (O.slideNumbers) s.slideNumber = { x: W - 1.15, y: H - 0.48, w: 0.5, h: 0.3, fontSize: 10, color: th.muted, fontFace: th.body, align: 'right' };
         }
         function drawTitle(pptx, s, th, W, F, title, kicker) {
+            if (TPL) return tplTitle(s, th, F, title);
             const R = pptx.ShapeType;
             const logoW = PPTX_LOGO ? 1.4 : 0;
             if (th.bar === 'band') {
@@ -5617,6 +5619,7 @@ FINISH WITH
 
         // ---------- special slides ----------
         function drawCover(pptx, th, W, H, cover, O) {
+            if (TPL) return tplCover(pptx, th, W, H, cover, O);
             const s = pptx.addSlide();
             const meta = O.coverMeta ? [DOC_META.author, DOC_META.company, new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join('   ·   ') : '';
             const R = pptx.ShapeType, on = th.onStrong;
@@ -5660,6 +5663,7 @@ FINISH WITH
             return s;
         }
         function drawSection(pptx, th, W, H, title, num, total, O) {
+            if (TPL) return tplSection(pptx, th, W, H, title, num, total, O);
             const s = pptx.addSlide();
             const on = th.onStrong;
             s.background = { color: th.strong };
@@ -5707,6 +5711,7 @@ FINISH WITH
             return null;
         }
         function drawStatement(pptx, th, W, H, O, F, st, title) {
+            if (TPL) return tplStatement(pptx, th, W, H, O, F, st, title);
             const s = pptx.addSlide();
             const on = th.onStrong;
             s.background = { color: th.strong };
@@ -5727,6 +5732,7 @@ FINISH WITH
             return s;
         }
         function drawClosing(pptx, th, W, H, O) {
+            if (TPL) return tplClosing(pptx, th, W, H, O);
             const s = pptx.addSlide();
             const on = th.onStrong;
             s.background = { color: th.strong };
@@ -5740,40 +5746,411 @@ FINISH WITH
         }
 
         // ---------- transitions (PptxGenJS has none: add them to the slide XML) ----------
-        async function finishDeck(buf, kind, bulletColor) {
-            const X = { fade: '<p:fade/>', push: '<p:push dir="u"/>', wipe: '<p:wipe dir="r"/>', cover: '<p:cover dir="l"/>', split: '<p:split orient="vert" dir="out"/>' }[kind];
+
+        // ===== TEMPLATE MODE: build the deck on the uploaded template's own masters, layouts, theme and media =====
+        let PPTX_TEMPLATE = null;        // { name, buf, info }
+        let TPL = null;                  // geometry of the template while a deck is being built
+        const IDB_NAME = '4md', IDB_STORE = 'files';
+        function idbOpen() {
+            return new Promise((res, rej) => {
+                if (typeof indexedDB === 'undefined') return rej(new Error('no IndexedDB'));
+                const r = indexedDB.open(IDB_NAME, 1);
+                r.onupgradeneeded = () => r.result.createObjectStore(IDB_STORE);
+                r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+            });
+        }
+        async function idbDo(mode, fn) {
+            const db = await idbOpen();
+            return new Promise((res, rej) => {
+                const tx = db.transaction(IDB_STORE, mode), st = tx.objectStore(IDB_STORE);
+                const rq = fn(st);
+                tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => rej(tx.error);
+            });
+        }
+        const idbGet = k => idbDo('readonly', st => st.get(k)).catch(() => null);
+        const idbSet = (k, v) => idbDo('readwrite', st => st.put(v, k)).catch(() => null);
+        const idbDel = k => idbDo('readwrite', st => st.delete(k)).catch(() => null);
+
+        // --- package helpers ---
+        function pkgDir(p) { return p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : ''; }
+        function pkgJoin(dir, target) {
+            if (target.startsWith('/')) return target.slice(1);
+            const out = dir ? dir.split('/') : [];
+            for (const seg of target.split('/')) { if (seg === '..') out.pop(); else if (seg && seg !== '.') out.push(seg); }
+            return out.join('/');
+        }
+        function pkgRel(fromPart, toPath) {
+            const a = pkgDir(fromPart).split('/').filter(Boolean), b = toPath.split('/');
+            let i = 0; while (i < a.length && i < b.length - 1 && a[i] === b[i]) i++;
+            return '../'.repeat(a.length - i) + b.slice(i).join('/');
+        }
+        function relsPath(part) { return pkgDir(part) + '/_rels/' + part.split('/').pop() + '.rels'; }
+        function parseRels(xml, part) {
+            const out = [];
+            (xml.match(/<Relationship\b[^>]*\/?>/g) || []).forEach(r => {
+                const id = xmlAttr(r, /\bId="([^"]+)"/), type = xmlAttr(r, /\bType="([^"]+)"/), target = xmlAttr(r, /\bTarget="([^"]+)"/);
+                const ext = /TargetMode="External"/.test(r);
+                out.push({ id, type, target, ext, abs: ext ? target : pkgJoin(pkgDir(part), target), raw: r });
+            });
+            return out;
+        }
+        const EMU = 914400;
+        function phList(xml) {
+            const out = [];
+            xml.split(/<p:sp>|<p:sp /).slice(1).forEach(sp => {
+                const tag = (sp.match(/<p:ph\b[^>]*>/) || [])[0];
+                if (!tag) return;
+                const type = xmlAttr(tag, /\btype="([^"]+)"/) || 'obj', idx = xmlAttr(tag, /\bidx="([^"]+)"/);
+                const orient = xmlAttr(tag, /\borient="([^"]+)"/), sz = xmlAttr(tag, /\bsz="([^"]+)"/);
+                const sp1 = (sp.match(/<p:spPr[\s\S]*?<\/p:spPr>|<p:spPr\/>/) || [''])[0];
+                const off = sp1.match(/<a:off x="(-?\d+)" y="(-?\d+)"\/>/), ext = sp1.match(/<a:ext cx="(\d+)" cy="(\d+)"\/>/);
+                const box = off && ext ? { x: +off[1] / EMU, y: +off[2] / EMU, w: +ext[1] / EMU, h: +ext[2] / EMU } : null;
+                const ptag = '<p:ph' + (type !== 'obj' || !idx ? ' type="' + type + '"' : '') + (orient ? ' orient="' + orient + '"' : '') + (sz ? ' sz="' + sz + '"' : '') + (idx ? ' idx="' + idx + '"' : '') + '/>';
+                out.push({ type, idx, box, ptag });
+            });
+            return out;
+        }
+        async function parseTemplateInfo(buf) {
             const zip = await JSZip.loadAsync(buf);
-            const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n));
-            for (const n of names) {
-                let x = await zip.file(n).async('string');
-                let id = 1;
-                x = x.replace(/<p:cNvPr id="\d+"/g, () => '<p:cNvPr id="' + (++id) + '"');
-                // PptxGenJS 3.12 drops bullet colours: give every bullet the theme accent
-                if (bulletColor) x = x.replace(/(<a:buSzPct val="\d+"\/>)?<a:buChar /g, m => '<a:buClr><a:srgbClr val="' + bulletColor + '"/></a:buClr>' + m);
-                if (!X || x.includes('<p:transition')) { zip.file(n, x); continue; }
-                const t = '<p:transition spd="med">' + X + '</p:transition>';
-                if (x.includes('<p:timing')) x = x.replace('<p:timing', t + '<p:timing');
-                else if (x.includes('</p:clrMapOvr>')) x = x.replace('</p:clrMapOvr>', '</p:clrMapOvr>' + t);
-                else x = x.replace('</p:sld>', t + '</p:sld>');
-                zip.file(n, x);
+            const rd = async p => (zip.file(p) ? zip.file(p).async('string') : '');
+            const pres = await rd('ppt/presentation.xml');
+            if (!pres) throw new Error('not a PowerPoint file');
+            const presRels = parseRels(await rd('ppt/_rels/presentation.xml.rels'), 'ppt/presentation.xml');
+            const cx = +xmlAttr(pres, /<p:sldSz[^>]*\bcx="(\d+)"/) || 12192000, cy = +xmlAttr(pres, /<p:sldSz[^>]*\bcy="(\d+)"/) || 6858000;
+            const mTag = (pres.match(/<p:sldMasterId\b[^>]*>/) || [])[0];
+            if (!mTag) throw new Error('the file has no slide master');
+            const masterId = xmlAttr(mTag, /\bid="(\d+)"/) || '2147483648', mRid = xmlAttr(mTag, /r:id="([^"]+)"/);
+            const masterPath = (presRels.find(r => r.id === mRid) || {}).abs;
+            const mXml = await rd(masterPath), mRels = parseRels(await rd(relsPath(masterPath)), masterPath);
+            const themePath = (mRels.find(r => /\/theme$/.test(r.type)) || {}).abs;
+            const mPh = phList(mXml);
+            const layouts = [];
+            for (const lid of (mXml.match(/<p:sldLayoutId\b[^>]*>/g) || [])) {
+                const rel = mRels.find(r => r.id === xmlAttr(lid, /r:id="([^"]+)"/));
+                if (!rel) continue;
+                const x = await rd(rel.abs);
+                layouts.push({ path: rel.abs, file: rel.abs.split('/').pop(), type: xmlAttr(x, /<p:sldLayout\b[^>]*\btype="([^"]+)"/) || '',
+                               name: xmlAttr(x, /<p:cSld\b[^>]*\bname="([^"]*)"/), ph: phList(x) });
             }
-            return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+            if (!layouts.length) throw new Error('the slide master has no layouts');
+            const find = (types, re) => layouts.find(l => types.includes(l.type)) || (re ? layouts.find(l => re.test(l.name)) : null);
+            const L = {
+                cover: find(['title'], /title slide/i) || layouts[0],
+                content: find(['titleOnly'], /title only/i) || find(['obj', 'tx'], /title and content/i) || layouts[0],
+                section: find(['secHead'], /section/i),
+                blank: find(['blank'], /blank/i)
+            };
+            L.section = L.section || L.content; L.blank = L.blank || L.content;
+            const MASTER_OF = { title: 'title', ctrTitle: 'title', body: 'body', subTitle: 'body', obj: 'body', sldNum: 'sldNum', ftr: 'ftr', dt: 'dt' };
+            function ph(layout, types) {
+                const p = layout.ph.find(q => types.includes(q.type));
+                if (!p) return null;
+                const box = p.box || ((mPh.find(q => q.type === MASTER_OF[p.type]) || {}).box);
+                return Object.assign({}, p, { box });
+            }
+            const W = cx / EMU, H = cy / EMU;
+            const tTitle = ph(L.content, ['title']) || { box: (mPh.find(q => q.type === 'title') || {}).box };
+            const tBody = ph(L.content, ['obj', 'body']) || { box: (mPh.find(q => q.type === 'body') || {}).box };
+            const tb = (tTitle && tTitle.box) || { x: W * 0.06, y: H * 0.05, w: W * 0.88, h: H * 0.14 };
+            const bb = (tBody && tBody.box) || { x: tb.x, y: tb.y + tb.h + 0.2, w: tb.w, h: H - tb.y - tb.h - 0.9 };
+            const by = Math.max(tb.y + tb.h + 0.18, bb.y);
+            const box = { x: bb.x, y: by, w: bb.w, h: Math.max(2, bb.y + bb.h - by) };
+            // background colour of the master (for dark templates)
+            let bgHex = '';
+            const bgx = (mXml.match(/<p:bg>[\s\S]*?<\/p:bg>/) || [''])[0];
+            const themeXml = themePath ? await rd(themePath) : '';
+            const schemeHex = k => { const m = themeXml.match(new RegExp('<a:' + k + '>([\\s\\S]*?)</a:' + k + '>')); return m ? (xmlAttr(m[1], /srgbClr val="([0-9A-Fa-f]{6})"/) || xmlAttr(m[1], /lastClr="([0-9A-Fa-f]{6})"/)) : ''; };
+            const s1 = xmlAttr(bgx, /<a:srgbClr val="([0-9A-Fa-f]{6})"/), s2 = xmlAttr(bgx, /<a:schemeClr val="(\w+)"/);
+            if (s1) bgHex = s1; else if (s2) bgHex = schemeHex({ bg1: 'lt1', bg2: 'lt2', tx1: 'dk1', tx2: 'dk2', lt1: 'lt1', lt2: 'lt2', dk1: 'dk1', dk2: 'dk2' }[s2] || 'lt1');
+            const hasPicBg = /<a:blipFill/.test(bgx);
+            return {
+                zip, W, H, cx, cy, masterId, masterPath, themePath, layouts, L,
+                geo: {
+                    title: tb, box,
+                    cover: { title: ph(L.cover, ['ctrTitle', 'title']), sub: ph(L.cover, ['subTitle', 'body', 'obj']) },
+                    section: { title: ph(L.section, ['title', 'ctrTitle']), body: ph(L.section, ['body', 'obj', 'subTitle']) }
+                },
+                dark: !!bgHex && !hasPicBg && pxLum(bgHex.toUpperCase()) < 0.35, bgHex: bgHex.toUpperCase(),
+                lt1: schemeHex('lt1').toUpperCase(), dk1: schemeHex('dk1').toUpperCase()
+            };
+        }
+        async function setTemplate(file) {
+            const buf = await file.arrayBuffer();
+            const info = await parseTemplateInfo(buf);
+            const a = await analyzePptx(file);
+            PPTX_TEMPLATE = { name: file.name, buf, info };
+            await idbSet('pptx_template', { name: file.name, buf });
+            return a;
+        }
+        async function clearTemplate() { PPTX_TEMPLATE = null; await idbDel('pptx_template'); }
+        const TEMPLATE_READY = (async () => {
+            try {
+                const rec = await idbGet('pptx_template');
+                if (rec && rec.buf) PPTX_TEMPLATE = { name: rec.name, buf: rec.buf, info: await parseTemplateInfo(rec.buf) };
+            } catch (e) { PPTX_TEMPLATE = null; }
+        })();
+        function templateActive(O) { return O.theme === 'custom' && O.useMasters !== false && !!PPTX_TEMPLATE; }
+
+        // --- slide drawing on template layouts ---
+        function tplBox(p, fb) { return (p && p.box) ? p.box : fb; }
+        function tplChrome(pptx, s, th, W, H, O, footerText) {
+            if (O.footer && footerText) s.addText(footerText, { objectName: '4md:ftr', x: 0.65, y: H - 0.48, w: W * 0.5, h: 0.3, fontSize: 10, color: th.muted, fontFace: th.body, margin: 0 });
+            if (O.slideNumbers) s.slideNumber = { x: W - 1.15, y: H - 0.48, w: 0.5, h: 0.3, fontSize: 10, color: th.muted, fontFace: th.body, align: 'right' };
+        }
+        function tplTitle(s, th, F, title) {
+            const b = TPL.geo.title;
+            s.addText(title, { objectName: '4md:title', x: b.x, y: b.y, w: b.w, h: b.h, fontSize: F.title, color: th.title, fontFace: th.head, valign: 'middle', fit: 'shrink', margin: 0 });
+        }
+        function tplCover(pptx, th, W, H, cover, O) {
+            const s = pptx.addSlide();
+            const g = TPL.geo.cover;
+            const tb = tplBox(g.title, { x: W * 0.1, y: H * 0.3, w: W * 0.8, h: H * 0.2 });
+            const sb = tplBox(g.sub, { x: tb.x, y: tb.y + tb.h + 0.1, w: tb.w, h: H * 0.12 });
+            s.addText(cover.title, { objectName: '4md:ctrTitle', x: tb.x, y: tb.y, w: tb.w, h: tb.h, fontSize: 40, bold: true, color: th.title, fontFace: th.head, valign: 'bottom', fit: 'shrink', margin: 0 });
+            if (cover.sub) s.addText(cover.sub, { objectName: '4md:subTitle', x: sb.x, y: sb.y, w: sb.w, h: sb.h, fontSize: 20, color: th.muted, fontFace: th.body, valign: 'top', fit: 'shrink', margin: 0 });
+            const meta = O.coverMeta ? [DOC_META.author, DOC_META.company, new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join('   ·   ') : '';
+            const my = sb.y + sb.h + 0.15;
+            if (meta && my + 0.4 < H - 0.3) s.addText(meta, { x: sb.x, y: my, w: sb.w, h: 0.4, fontSize: 13, color: th.muted, fontFace: th.body, margin: 0, align: (sb.x + sb.w / 2 > W * 0.4 && sb.x > W * 0.15) ? 'center' : 'left' });
+            if (PPTX_LOGO) addLogo(s, W - 2.6, 0.45, 2.0, 0.8);
+            return s;
+        }
+        function tplSection(pptx, th, W, H, title, num, total, O) {
+            const s = pptx.addSlide();
+            const g = TPL.geo.section;
+            const tb = tplBox(g.title, { x: W * 0.08, y: H * 0.35, w: W * 0.84, h: H * 0.2 });
+            s.addText(title, { objectName: '4md:title', x: tb.x, y: tb.y, w: tb.w, h: tb.h, fontSize: 40, bold: true, color: th.title, fontFace: th.head, valign: 'bottom', fit: 'shrink', margin: 0 });
+            const lab = total > 1 ? 'Section ' + num + ' of ' + total : '';
+            if (lab) {
+                const bb = tplBox(g.body, { x: tb.x, y: tb.y + tb.h + 0.1, w: tb.w, h: 0.6 });
+                s.addText(lab, { objectName: g.body ? '4md:body' : '', x: bb.x, y: bb.y, w: bb.w, h: Math.min(bb.h, 1.2), fontSize: 18, color: th.accent, fontFace: th.body, valign: 'top', margin: 0 });
+            }
+            if (O.slideNumbers) s.slideNumber = { x: W - 1.15, y: H - 0.48, w: 0.5, h: 0.3, fontSize: 10, color: th.muted, align: 'right' };
+            return s;
+        }
+        function tplStatement(pptx, th, W, H, O, F, st, title) {
+            const s = pptx.addSlide();
+            const b = TPL.geo.box;
+            const base = { fontFace: th.head, color: th.title, boldColor: th.title };
+            if (title) s.addText(title.toUpperCase(), { x: b.x, y: b.y, w: b.w, h: 0.4, fontSize: 13, bold: true, charSpacing: 3, color: th.accent, fontFace: th.body, margin: 0 });
+            if (st.kind === 'stat') {
+                s.addText(st.num, { x: b.x, y: b.y + 0.5, w: b.w, h: b.h * 0.5, fontSize: 110, bold: true, color: th.accent, fontFace: th.head, valign: 'bottom', fit: 'shrink', margin: 0 });
+                s.addText(pptxRuns(st.text, Object.assign({}, base, { fontSize: 28 }), th), { x: b.x, y: b.y + 0.6 + b.h * 0.5, w: b.w * 0.85, h: b.h * 0.4, valign: 'top', fit: 'shrink', margin: 0 });
+            } else {
+                const p = st.kind === 'quote' ? quoteParts(st.text) : { q: st.text, by: '' };
+                if (st.kind === 'quote') s.addText('“', { x: b.x - 0.1, y: b.y + 0.3, w: 1.4, h: 1.4, fontSize: 120, color: th.accent, fontFace: 'Georgia', bold: true, margin: 0 });
+                const fs = p.q.length > 140 ? 28 : p.q.length > 80 ? 34 : 40;
+                s.addText(pptxRuns(p.q, Object.assign({}, base, { fontSize: fs, italic: st.kind === 'quote' }), th), { x: b.x + (st.kind === 'quote' ? 1.1 : 0), y: b.y + b.h * 0.2, w: b.w * 0.85, h: b.h * 0.55, valign: 'middle', fit: 'shrink', margin: 0 });
+                if (p.by) s.addText('— ' + p.by, { x: b.x + (st.kind === 'quote' ? 1.1 : 0), y: b.y + b.h * 0.78, w: b.w * 0.8, h: 0.5, fontSize: 18, color: th.muted, fontFace: th.body, margin: 0 });
+            }
+            if (O.slideNumbers) s.slideNumber = { x: W - 1.15, y: H - 0.48, w: 0.5, h: 0.3, fontSize: 10, color: th.muted, align: 'right' };
+            return s;
+        }
+        function tplClosing(pptx, th, W, H, O) {
+            const who = [DOC_META.author, DOC_META.company].filter(Boolean).join('   ·   ');
+            return tplCover(pptx, th, W, H, { title: O.closingText || 'Thank you', sub: who }, Object.assign({}, O, { coverMeta: false }));
+        }
+
+        // --- the finishing pass: clean package, theme, transitions, template merge ---
+        const CT_OVERRIDE = {
+            slideMaster: 'application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml',
+            slideLayout: 'application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml',
+            theme: 'application/vnd.openxmlformats-officedocument.theme+xml'
+        };
+        function themeClrScheme(th) {
+            const c = (k, v) => '<a:' + k + '><a:srgbClr val="' + v + '"/></a:' + k + '>';
+            const P = th.palette.concat([th.accent, th.strong, th.muted, th.title, th.accent, th.strong]).slice(0, 6);
+            const dark = th.dark;
+            return '<a:clrScheme name="' + xmlEsc(th.name || '4md') + '">'
+                + c('dk1', dark ? th.bg : th.text) + c('lt1', dark ? th.text : th.bg)
+                + c('dk2', dark ? pxMix(th.bg, '000000', 0.8) : th.title) + c('lt2', dark ? th.title : th.soft)
+                + P.map((v, i) => c('accent' + (i + 1), v)).join('') + c('hlink', th.accent) + c('folHlink', th.muted) + '</a:clrScheme>';
+        }
+        function xmlEsc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function toPlaceholder(sp, ptag) {
+            return sp.replace(/<p:nvPr>[\s\S]*?<\/p:nvPr>|<p:nvPr\/>/, '<p:nvPr>' + ptag + '</p:nvPr>')
+                     .replace(/<p:cNvSpPr\/>|<p:cNvSpPr>[\s\S]*?<\/p:cNvSpPr>/, '<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr>')
+                     .replace(/<p:spPr>[\s\S]*?<\/p:spPr>/, '<p:spPr/>')
+                     .replace(/<a:bodyPr\b[^>]*\/>|<a:bodyPr\b[^>]*>[\s\S]*?<\/a:bodyPr>/, '<a:bodyPr><a:normAutofit/></a:bodyPr>')
+                     .replace(/<a:lstStyle>[\s\S]*?<\/a:lstStyle>/, '<a:lstStyle/>')
+                     .replace(/<a:pPr\b[^>]*\/>|<a:pPr\b[^>]*>[\s\S]*?<\/a:pPr>/g, '')
+                     .replace(/<a:rPr\b[^>]*\/>|<a:rPr\b[^>]*>[\s\S]*?<\/a:rPr>/g, '<a:rPr lang="en-US" dirty="0"/>')
+                     .replace(/<a:endParaRPr\b[^>]*\/>|<a:endParaRPr\b[^>]*>[\s\S]*?<\/a:endParaRPr>/g, '<a:endParaRPr lang="en-US" dirty="0"/>');
+        }
+        async function finishDeck(buf, opt) {
+            const src = await JSZip.loadAsync(buf);
+            const F = {};
+            for (const [n, f] of Object.entries(src.files)) {
+                if (f.dir) continue;
+                F[n] = /\.(xml|rels)$/i.test(n) ? await f.async('string') : await f.async('uint8array');
+            }
+            const T = opt.tpl;
+            const X = { fade: '<p:fade/>', push: '<p:push dir="u"/>', wipe: '<p:wipe dir="r"/>', cover: '<p:cover dir="l"/>', split: '<p:split orient="vert" dir="out"/>' }[opt.transition];
+            const slideNames = Object.keys(F).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => +a.match(/(\d+)\.xml/)[1] - +b.match(/(\d+)\.xml/)[1]);
+
+            // 1. numbers that PowerPoint rejects (NaN, Infinity, negative sizes)
+            for (const n of Object.keys(F)) {
+                if (!/^ppt\/(slides|charts)\/[^/]+\.xml$/.test(n)) continue;
+                F[n] = F[n].replace(/="(-?NaN|-?Infinity|undefined|null)"/g, '="0"').replace(/(<a:ext cx=")-\d+(" cy=")/g, '$10$2').replace(/(<a:ext cx="\d+" cy=")-\d+"/g, '$10"');
+            }
+            // 2. notes master gets its own theme part (PowerPoint gives every master its own theme)
+            if (F['ppt/theme/theme1.xml'] && F['ppt/notesMasters/_rels/notesMaster1.xml.rels'] && !F['ppt/theme/theme2.xml']) {
+                F['ppt/theme/theme2.xml'] = F['ppt/theme/theme1.xml'];
+                F['ppt/notesMasters/_rels/notesMaster1.xml.rels'] = F['ppt/notesMasters/_rels/notesMaster1.xml.rels'].replace('../theme/theme1.xml', '../theme/theme2.xml');
+            }
+            // 3. the deck's own colours and fonts become the PowerPoint theme
+            if (!T && F['ppt/theme/theme1.xml'] && opt.theme) {
+                const th = opt.theme;
+                F['ppt/theme/theme1.xml'] = F['ppt/theme/theme1.xml']
+                    .replace(/<a:theme\b([^>]*)\bname="[^"]*"/, '<a:theme$1name="' + xmlEsc(th.name || '4md') + '"')
+                    .replace(/<a:clrScheme\b[\s\S]*?<\/a:clrScheme>/, themeClrScheme(th))
+                    .replace(/(<a:fontScheme\b[^>]*\bname=")[^"]*"/, '$1' + xmlEsc(th.name || '4md') + '"')
+                    .replace(/(<a:majorFont>\s*<a:latin typeface=")[^"]*"/, '$1' + xmlEsc(th.head) + '"')
+                    .replace(/(<a:minorFont>\s*<a:latin typeface=")[^"]*"/, '$1' + xmlEsc(th.body) + '"');
+            }
+            // 4. template merge
+            const ctExtra = {}, ctDefaults = {};
+            if (T) {
+                const tz = T.zip;
+                const tct = await tz.file('[Content_Types].xml').async('string');
+                const tOver = {}, tDef = {};
+                (tct.match(/<Override\b[^>]*>/g) || []).forEach(o => { tOver[xmlAttr(o, /PartName="\/?([^"]+)"/)] = xmlAttr(o, /ContentType="([^"]+)"/); });
+                (tct.match(/<Default\b[^>]*>/g) || []).forEach(o => { tDef[xmlAttr(o, /Extension="([^"]+)"/).toLowerCase()] = xmlAttr(o, /ContentType="([^"]+)"/); });
+                Object.keys(F).forEach(n => { if (/^ppt\/(slideMasters|slideLayouts)\//.test(n)) delete F[n]; });
+                const map = {};
+                map[T.masterPath] = 'ppt/slideMasters/slideMaster1.xml';
+                T.layouts.forEach(l => { map[l.path] = 'ppt/slideLayouts/' + l.file; });
+                if (T.themePath) map[T.themePath] = 'ppt/theme/theme1.xml';
+                const queue = Object.keys(map), done = new Set();
+                while (queue.length) {
+                    const p = queue.shift();
+                    if (done.has(p)) continue; done.add(p);
+                    const out = map[p], f = tz.file(p);
+                    if (!f) continue;
+                    const isText = /\.(xml|rels)$/i.test(p);
+                    F[out] = isText ? await f.async('string') : await f.async('uint8array');
+                    if (tOver[p]) ctExtra[out] = tOver[p];
+                    else { const e = p.split('.').pop().toLowerCase(); if (tDef[e]) ctDefaults[e] = tDef[e]; }
+                    const rp = relsPath(p), rf = tz.file(rp);
+                    if (!rf) continue;
+                    let rx = await rf.async('string');
+                    for (const r of parseRels(rx, p)) {
+                        if (r.ext) continue;
+                        if (/\/(slide|notesSlide|notesMaster|handoutMaster)$/.test(r.type)) { rx = rx.replace(r.raw, ''); continue; }
+                        if (!map[r.abs]) {
+                            if (/\/slideMaster$/.test(r.type)) map[r.abs] = 'ppt/slideMasters/slideMaster1.xml';
+                            else if (/\/slideLayout$/.test(r.type)) { rx = rx.replace(r.raw, ''); continue; }
+                            else {
+                                const base = r.abs.split('/').pop();
+                                map[r.abs] = r.abs.startsWith('ppt/media/') ? 'ppt/media/tpl_' + base : (F[r.abs] ? pkgDir(r.abs) + '/tpl_' + base : r.abs);
+                                queue.push(r.abs);
+                            }
+                        }
+                        rx = rx.replace(r.raw, r.raw.replace(/\bTarget="[^"]*"/, 'Target="' + pkgRel(out, map[r.abs]) + '"'));
+                    }
+                    F[relsPath(out)] = rx;
+                }
+                // master: keep only layouts we copied
+                const mx = F['ppt/slideMasters/slideMaster1.xml'], mr = parseRels(F[relsPath('ppt/slideMasters/slideMaster1.xml')], 'ppt/slideMasters/slideMaster1.xml');
+                F['ppt/slideMasters/slideMaster1.xml'] = mx.replace(/<p:sldLayoutId\b[^>]*\/>/g, t => mr.some(r => r.id === xmlAttr(t, /r:id="([^"]+)"/)) ? t : '');
+                // presentation: one master, template size
+                let pres = F['ppt/presentation.xml'];
+                const pr = parseRels(F['ppt/_rels/presentation.xml.rels'], 'ppt/presentation.xml');
+                const mRel = pr.find(r => /\/slideMaster$/.test(r.type));
+                F['ppt/_rels/presentation.xml.rels'] = F['ppt/_rels/presentation.xml.rels'].replace(/<Relationship\b[^>]*\/slideMaster"[^>]*\/>/g, t => t === mRel.raw ? t : '');
+                pres = pres.replace(/<p:sldMasterIdLst>[\s\S]*?<\/p:sldMasterIdLst>/, '<p:sldMasterIdLst><p:sldMasterId id="' + T.masterId + '" r:id="' + mRel.id + '"/></p:sldMasterIdLst>')
+                           .replace(/<p:sldSz\b[^>]*\/>/, '<p:sldSz cx="' + T.cx + '" cy="' + T.cy + '"/>');
+                F['ppt/presentation.xml'] = pres;
+                // slides: pick the layout, drop the white background, hand titles to the template's placeholders
+                const KIND = { cover: T.L.cover, closing: T.L.cover, section: T.L.section, content: T.L.content, statement: T.L.blank };
+                slideNames.forEach((n, i) => {
+                    const lay = KIND[opt.kinds[i]] || T.L.content;
+                    const rp = relsPath(n);
+                    F[rp] = F[rp].replace(/(<Relationship\b[^>]*\/slideLayout"[^>]*\bTarget=")[^"]*"/, '$1../slideLayouts/' + lay.file + '"')
+                                 .replace(/(<Relationship\b[^>]*\bTarget=")[^"]*("[^>]*\/slideLayout")/, '$1../slideLayouts/' + lay.file + '$2');
+                    let x = F[n].replace(/<p:bg>[\s\S]*?<\/p:bg>/, '');
+                    const want = { '4md:title': ['title', 'ctrTitle'], '4md:ctrTitle': ['ctrTitle', 'title'], '4md:subTitle': ['subTitle', 'body'], '4md:body': ['body', 'obj'], '4md:ftr': ['ftr'] };
+                    x = x.replace(/<p:sp>[\s\S]*?<\/p:sp>/g, sp => {
+                        const nm = xmlAttr(sp, /<p:cNvPr id="\d+" name="([^"]*)"/);
+                        if (want[nm]) {
+                            const p = want[nm].map(t => lay.ph.find(q => q.type === t)).find(Boolean);
+                            return p ? toPlaceholder(sp, p.ptag) : sp;
+                        }
+                        if (/<p:ph type="sldNum"/.test(sp)) {
+                            const p = lay.ph.find(q => q.type === 'sldNum');
+                            if (p) return toPlaceholder(sp, p.ptag).replace(/<a:t>[^<]*<\/a:t>/, m => m);
+                        }
+                        return sp;
+                    });
+                    F[n] = x;
+                });
+            }
+            // 5. slides: unique ids, bullet colours, transitions
+            for (const n of slideNames) {
+                let x = F[n], id = 1;
+                x = x.replace(/<p:cNvPr id="\d+"/g, () => '<p:cNvPr id="' + (++id) + '"');
+                if (opt.bulletColor) x = x.replace(/<a:buClr>[\s\S]*?<\/a:buClr>/g, '').replace(/(<a:buSzPct val="\d+"\/>)?(<a:buFont\b[^>]*\/>)?<a:buChar /g, m => '<a:buClr><a:srgbClr val="' + opt.bulletColor + '"/></a:buClr>' + m);
+                if (X && !x.includes('<p:transition')) {
+                    const t = '<p:transition spd="med">' + X + '</p:transition>';
+                    if (x.includes('<p:timing')) x = x.replace('<p:timing', t + '<p:timing');
+                    else if (x.includes('</p:clrMapOvr>')) x = x.replace('</p:clrMapOvr>', '</p:clrMapOvr>' + t);
+                    else x = x.replace('</p:sld>', t + '</p:sld>');
+                }
+                F[n] = x;
+            }
+            // 6. content types: drop parts that do not exist, declare the new ones
+            let ct = F['[Content_Types].xml'];
+            ct = ct.replace(/<Override\b[^>]*PartName="\/([^"]+)"[^>]*\/>/g, (t, p) => F[p] ? t : '');
+            const have = p => new RegExp('PartName="/' + p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"').test(ct);
+            const add = [];
+            if (F['ppt/theme/theme2.xml'] && !have('ppt/theme/theme2.xml')) add.push('<Override PartName="/ppt/theme/theme2.xml" ContentType="' + CT_OVERRIDE.theme + '"/>');
+            Object.keys(F).forEach(p => {
+                if (have(p)) return;
+                let type = ctExtra[p];
+                if (!type && /^ppt\/slideMasters\/[^/]+\.xml$/.test(p)) type = CT_OVERRIDE.slideMaster;
+                if (!type && /^ppt\/slideLayouts\/[^/]+\.xml$/.test(p)) type = CT_OVERRIDE.slideLayout;
+                if (!type && /^ppt\/theme\/[^/]+\.xml$/.test(p)) type = CT_OVERRIDE.theme;
+                if (type) add.push('<Override PartName="/' + p + '" ContentType="' + type + '"/>');
+            });
+            Object.entries(ctDefaults).forEach(([e, t]) => { if (!new RegExp('Extension="' + e + '"', 'i').test(ct)) add.push('<Default Extension="' + e + '" ContentType="' + t + '"/>'); });
+            // Defaults must come before Overrides
+            const defs = add.filter(a => a.startsWith('<Default')), ovs = add.filter(a => a.startsWith('<Override'));
+            ct = ct.replace(/(<Types\b[^>]*>)/, '$1' + defs.join('')).replace('</Types>', ovs.join('') + '</Types>');
+            F['[Content_Types].xml'] = ct;
+            // 7. app.xml part lists go stale after the changes above: drop them
+            if (F['docProps/app.xml']) F['docProps/app.xml'] = F['docProps/app.xml'].replace(/<HeadingPairs>[\s\S]*?<\/HeadingPairs>/, '').replace(/<TitlesOfParts>[\s\S]*?<\/TitlesOfParts>/, '');
+            // 8. write a clean package: no folder entries, [Content_Types].xml first
+            const out = new JSZip();
+            const order = ['[Content_Types].xml', '_rels/.rels'].concat(Object.keys(F).filter(n => n !== '[Content_Types].xml' && n !== '_rels/.rels').sort());
+            order.forEach(n => { if (F[n] != null) out.file(n, F[n], { createFolders: false }); });
+            return out.generateAsync({ type: typeof Blob !== 'undefined' && typeof window !== 'undefined' ? 'blob' : 'nodebuffer', compression: 'DEFLATE',
+                                       mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
         }
 
         async function buildDeck(markdown, O) {
-            const th = getDeckTheme(O), F = deckFonts(O);
+            const T = templateActive(O) ? PPTX_TEMPLATE.info : null;
+            const darkOver = T && T.dark ? { dark: true, bg: T.bgHex || '1F1F1F', text: T.lt1 || 'FFFFFF', title: T.lt1 || 'FFFFFF', muted: pxMix(T.lt1 || 'FFFFFF', T.bgHex || '1F1F1F', 0.65) } : null;
+            const th = getDeckTheme(O, darkOver), F = deckFonts(O);
+            TPL = T;
+            try { return await buildDeckInner(markdown, O, th, F, T); } finally { TPL = null; }
+        }
+        async function buildDeckInner(markdown, O, th, F, T) {
             FONT_K = /georgia|times|cambria|garamond|book|serif|palatino/i.test(th.head + th.body) ? 0.62 : 0.56;
             MEASURE_FONT = th.body; MEASURE_HEAD = th.head;
             const pptx = new PptxGenJS();
-            const LAY = { '16:9': ['LAYOUT_WIDE', 13.333, 7.5], '4:3': ['LAYOUT_4x3', 10, 7.5], '16:10': ['LAYOUT_16x10', 10, 6.25] }[O.ratio] || ['LAYOUT_WIDE', 13.333, 7.5];
+            let LAY = { '16:9': ['LAYOUT_WIDE', 13.333, 7.5], '4:3': ['LAYOUT_4x3', 10, 7.5], '16:10': ['LAYOUT_16x10', 10, 6.25] }[O.ratio] || ['LAYOUT_WIDE', 13.333, 7.5];
+            if (T) { pptx.defineLayout({ name: 'TEMPLATE', width: T.W, height: T.H }); LAY = ['TEMPLATE', T.W, T.H]; }
             pptx.layout = LAY[0];
             const W = LAY[1], H = LAY[2];
+            // remember which kind of slide each one is, so the template layout can be chosen later
+            const kinds = []; let nextKind = 'content';
+            const addSlide0 = pptx.addSlide.bind(pptx);
+            pptx.addSlide = (...a) => { kinds.push(nextKind); nextKind = 'content'; return addSlide0(...a); };
             pptx.theme = { headFontFace: th.head, bodyFontFace: th.body };
             const { cover, slides } = pptxParse(markdown);
             const title = DOC_META.title || (cover && cover.title) || 'Presentation';
             pptx.title = title; pptx.author = DOC_META.author || ''; pptx.company = DOC_META.company || ''; pptx.subject = DOC_META.subject || '';
             const footerText = (DOC_THEME.footerMode === 'textPage' && DOC_THEME.footerText) ? DOC_THEME.footerText : title;
-            if (cover) { const cs = drawCover(pptx, th, W, H, cover, O); if (cover.notes) cs.addNotes(cover.notes); }
+            if (cover) { nextKind = 'cover'; const cs = drawCover(pptx, th, W, H, cover, O); if (cover.notes) cs.addNotes(cover.notes); }
             const sections = slides.filter(x => x.kind === 'section');
             if (O.agenda) {
                 let items = sections.map(x => x.title);
@@ -5782,12 +6159,12 @@ FINISH WITH
             }
             let sec = 0;
             for (const sl of slides) {
-                if (sl.kind === 'section') { const ss = drawSection(pptx, th, W, H, sl.title, ++sec, sections.length, O); if (sl.notes) ss.addNotes(sl.notes); continue; }
+                if (sl.kind === 'section') { nextKind = 'section'; const ss = drawSection(pptx, th, W, H, sl.title, ++sec, sections.length, O); if (sl.notes) ss.addNotes(sl.notes); continue; }
                 const { pages, box } = paginate(sl, W, H, O, th, F);
                 for (let p = 0; p < pages.length; p++) {
                     const st = pages.length === 1 ? statementOf(pages[p]) : null;
                     let s;
-                    if (st) s = drawStatement(pptx, th, W, H, O, F, st, sl.title);
+                    if (st) { nextKind = 'statement'; s = drawStatement(pptx, th, W, H, O, F, st, sl.title); }
                     else {
                         s = pptx.addSlide();
                         drawChrome(pptx, s, th, W, H, O, footerText);
@@ -5797,17 +6174,18 @@ FINISH WITH
                     if (sl.notes && p === 0) s.addNotes(sl.notes);
                 }
             }
-            if (O.closing) drawClosing(pptx, th, W, H, O);
-            return { pptx, title };
+            if (O.closing) { nextKind = 'closing'; drawClosing(pptx, th, W, H, O); }
+            return { pptx, title, kinds, th, tpl: T };
         }
 
         async function markdownToPptx(markdown) {
             if (typeof PptxGenJS === 'undefined') throw new Error('PowerPoint library did not load — check your connection');
-            const { pptx, title } = await buildDeck(markdown, PPTX_OPTS);
+            await TEMPLATE_READY;
+            const { pptx, title, kinds, th, tpl } = await buildDeck(markdown, PPTX_OPTS);
             const fileName = (title.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'presentation') + '.pptx';
             if (typeof JSZip !== 'undefined') {
                 const buf = await pptx.write({ outputType: 'arraybuffer' });
-                const blob = await finishDeck(buf, PPTX_OPTS.transition, getDeckTheme(PPTX_OPTS).accent);
+                const blob = await finishDeck(buf, { transition: PPTX_OPTS.transition, bulletColor: th.accent, theme: th, tpl, kinds });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob); a.download = fileName;
                 document.body.appendChild(a); a.click(); a.remove();
@@ -5974,7 +6352,7 @@ FINISH WITH
                         + '<em style="color:#' + (pxLum(strong) > 0.6 ? '111' : 'fff') + ';font-family:' + t.head + '">Aa</em>'
                         + '<s style="background:#' + t.text + ';left:46%;width:30%"></s><s style="background:#' + t.muted + ';left:46%;width:20%"></s></span>'
                         + '<span class="pt-name">' + (key === 'custom' ? '★ ' : '') + esc(t.name) + '</span>';
-                    b.addEventListener('click', () => { PPTX_OPTS.theme = key; savePptxOpts(); renderGrid(); });
+                    b.addEventListener('click', () => { PPTX_OPTS.theme = key; savePptxOpts(); renderGrid(); if (typeof showBrand === 'function') showBrand(); });
                     grid.appendChild(b);
                 }
             }
@@ -6006,33 +6384,47 @@ FINISH WITH
                 const parts = [];
                 if (PPTX_THEMES.custom) {
                     const t = PPTX_THEMES.custom;
-                    parts.push('<b>' + esc(t.name) + '</b> is in the theme grid (★). Fonts: ' + esc(t.head) + ' / ' + esc(t.body) + '. Colours: '
+                    parts.push('<b>' + esc(t.name) + '</b> is in the theme grid (★)' + (PPTX_OPTS.theme === 'custom' ? ' and selected' : ' — click ★ to use it') + '. Fonts: ' + esc(t.head) + ' / ' + esc(t.body) + '. Colours: '
                         + [t.title, t.accent].concat(t.palette || []).map(c => '<span class="pt-sw" style="background:#' + c + '" title="#' + c + '"></span>').join('')
                         + ' <button type="button" class="tb" id="ptTplClear" style="padding:2px 8px">✕ remove</button>');
+                    if (PPTX_TEMPLATE) {
+                        const L = PPTX_TEMPLATE.info.L;
+                        parts.push('<label class="ds-check" style="margin:6px 0 2px"><input type="checkbox" id="ptUseMasters"' + (PPTX_OPTS.useMasters !== false ? ' checked' : '') + '> Build slides on the template itself — its backgrounds, logos, layouts, fonts and placeholders ('
+                            + PPTX_TEMPLATE.info.layouts.length + ' layouts in <i>' + esc(PPTX_TEMPLATE.name) + '</i>; cover → “' + esc(L.cover.name) + '”, content → “' + esc(L.content.name) + '”, sections → “' + esc(L.section.name) + '”)</label>');
+                    } else {
+                        parts.push('<span style="color:#b45309">Only the colours and fonts are kept. Load the template file again to build on its slide masters.</span>');
+                    }
                 }
                 if (PPTX_LOGO) parts.push('Logo: <img src="data:' + PPTX_LOGO.data + '" style="height:22px;vertical-align:middle;background:#f3f4f6;padding:2px;border-radius:4px"> placed on the cover, titles and closing slide.');
                 brand.innerHTML = parts.join('<br>');
                 const c = $('ptTplClear');
-                if (c) c.addEventListener('click', () => {
+                if (c) c.addEventListener('click', async () => {
                     delete PPTX_THEMES.custom; try { localStorage.removeItem('pptx_custom_theme_v1'); } catch (e) {}
+                    await clearTemplate();
                     if (PPTX_OPTS.theme === 'custom') { PPTX_OPTS.theme = 'navy'; savePptxOpts(); }
                     renderGrid(); showBrand();
                 });
+                const um = $('ptUseMasters');
+                if (um) um.addEventListener('change', () => { PPTX_OPTS.useMasters = um.checked; savePptxOpts(); });
             }
+            TEMPLATE_READY.then(showBrand);
             showBrand();
+            async function useTemplateFile(f) {
+                const a = await setTemplate(f);
+                if (!a.theme) throw new Error('no theme found in this file');
+                const t = themeFromAnalysis(a);
+                PPTX_THEMES.custom = t;
+                try { localStorage.setItem('pptx_custom_theme_v1', JSON.stringify(t)); } catch (er) {}
+                PPTX_OPTS.theme = 'custom'; PPTX_OPTS.useMasters = true;
+                savePptxOpts(); binds.forEach(fn => fn()); renderGrid(); showBrand();
+                return PPTX_TEMPLATE.info;
+            }
             $('ptTplFile').addEventListener('change', async e => {
                 const f = e.target.files[0]; e.target.value = '';
                 if (!f) return;
                 try {
-                    const a = await analyzePptx(f);
-                    if (!a.theme) throw new Error('no theme found in this file');
-                    const t = themeFromAnalysis(a);
-                    PPTX_THEMES.custom = t;
-                    try { localStorage.setItem('pptx_custom_theme_v1', JSON.stringify(t)); } catch (er) {}
-                    PPTX_OPTS.theme = 'custom';
-                    if (a.size) { const r = a.size.w / a.size.h; PPTX_OPTS.ratio = r > 1.7 ? '16:9' : r > 1.5 ? '16:10' : '4:3'; }
-                    savePptxOpts(); binds.forEach(fn => fn()); renderGrid(); showBrand();
-                    showMessage('✓ Template colours and fonts loaded from ' + f.name, 'success');
+                    const info = await useTemplateFile(f);
+                    showMessage('✓ Template loaded: ' + info.layouts.length + ' layouts from ' + f.name, 'success');
                 } catch (er) { showMessage('Could not read template: ' + er.message, 'error'); }
             });
             $('ptLogoFile').addEventListener('change', e => {
@@ -6095,7 +6487,7 @@ FINISH WITH
                             + '</td><td>' + ((s.pics ? '🖼' + s.pics + ' ' : '') + (s.charts ? '📊' + s.charts + ' ' : '') + (s.tables ? '▦' + s.tables : '')) + '</td><td>'
                             + (s.minFont ? s.minFont + (s.maxFont !== s.minFont ? '–' + s.maxFont : '') : '—') + '</td></tr>').join('') + '</table>';
                     h += '<div class="ds-import-actions" style="margin-top:8px"><button type="button" class="tb primary" id="ptToMd">✏️ Load as markdown (restyle it here)</button>'
-                        + (a.theme ? '<button type="button" class="tb" id="ptUseTheme">🎨 Use its colours &amp; fonts</button>' : '') + '</div>';
+                        + (a.theme ? '<button type="button" class="tb" id="ptUseTheme">🎨 Use it as my template</button>' : '') + '</div>';
                     rep.innerHTML = h;
                     $('ptToMd').addEventListener('click', () => {
                         if (editor.value.trim() && !confirm('Replace the editor content with the text of ' + a.name + '?')) return;
@@ -6104,11 +6496,9 @@ FINISH WITH
                         showMessage('✓ Deck text loaded — pick a theme and export', 'success');
                     });
                     const ut = $('ptUseTheme');
-                    if (ut) ut.addEventListener('click', () => {
-                        const t = themeFromAnalysis(a);
-                        PPTX_THEMES.custom = t; try { localStorage.setItem('pptx_custom_theme_v1', JSON.stringify(t)); } catch (er) {}
-                        PPTX_OPTS.theme = 'custom'; savePptxOpts(); renderGrid(); showBrand();
-                        showMessage('✓ Theme taken from ' + a.name, 'success');
+                    if (ut) ut.addEventListener('click', async () => {
+                        try { await useTemplateFile(f); showMessage('✓ ' + a.name + ' is now the template', 'success'); }
+                        catch (er) { showMessage('Could not use it as a template: ' + er.message, 'error'); }
                     });
                 } catch (er) { rep.innerHTML = 'Could not read this file: ' + esc(er.message); }
             });

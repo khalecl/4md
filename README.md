@@ -49,7 +49,8 @@ Icons: bolt money clock check users leaf gauge shield chart gear building drop s
 
 ### Slide settings (Settings → Slides)
 
-- **16 themes**, plus **your own**: load any `.pptx` / `.potx` / `.thmx` and its colours, fonts and slide size become the ★ My template theme.
+- **16 themes**, plus **your own template**: load any `.pptx` / `.potx` and 4md builds the deck *on* it — the template's slide masters, layouts, backgrounds, logos, theme colours and fonts are carried into the file, slides use its Title Slide / Title Only / Section Header layouts, and titles and slide numbers go into its own placeholders. The template is kept in the browser, so it is still there next visit.
+- Every exported deck carries its colours and fonts as a real PowerPoint theme (Design tab), not only as shape colours.
 - **Style**: title style, cover style, card style (soft, shadow, outline, solid), decoration (circles, dots, stripes, blocks), text size (large / standard / compact), bullet marker, fonts.
 - **Content**: smart layouts on/off, icons, ring charts, vertical centring, slide transitions (fade, push, wipe, cover, split).
 - **Deck**: aspect ratio, agenda, closing slide and text, slide numbers, footer, cover details, **logo**.
