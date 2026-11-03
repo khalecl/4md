@@ -53,6 +53,7 @@ Icons: bolt money clock check users leaf gauge shield chart gear building drop s
 - Every exported deck carries its colours and fonts as a real PowerPoint theme (Design tab), not only as shape colours.
 - **Style**: title style, cover style, card style (soft, shadow, outline, solid), decoration (circles, dots, stripes, blocks), text size (large / standard / compact), bullet marker, fonts.
 - **Content**: smart layouts on/off, icons, ring charts, vertical centring, slide transitions (fade, push, wipe, cover, split).
+- **Right-to-left**: Arabic, Hebrew, Persian and Urdu decks are detected (or set *Text direction* by hand). Every slide is mirrored — panels, side bars, cards, chevrons, timelines, tables — text runs right-to-left with its own Arabic/Hebrew font, and the labels 4md adds (Agenda, Section 1 of 3, Thank you) are translated. See [`examples/arabic-energy-deck.md`](examples/arabic-energy-deck.md).
 - **Deck**: aspect ratio, agenda, closing slide and text, slide numbers, footer, cover details, **logo**.
 - **Check my deck**: flags long titles, crowded slides, wordy bullets, big tables, missing notes and repeated plain-bullet slides before you export.
 - **Analyze a .pptx**: reports words per slide, font sizes, visuals and notes for any deck, takes its colours and fonts, or loads its text as markdown so you can restyle it here.

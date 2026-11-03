@@ -47,6 +47,9 @@ PICTURES
 OTHER
 Mermaid diagrams in ```mermaid blocks (≤ 8 nodes) sit beside text. Display maths `$$ … $$` on its own lines. Code blocks ≤ 12 lines, only for technical audiences.
 
+LANGUAGE
+Write in the language of the topic. Arabic, Hebrew, Persian and Urdu decks are detected automatically and the whole deck is mirrored right-to-left; keep numbers, units and standard names (ISO 50001, kWh) in Latin script.
+
 DO NOT
 Write raw HTML (only the comment directives above), paragraphs over 25 words, more than two plain-bullet slides in a row, made-up statistics presented as fact (mark estimates as "est."), or an Agenda / Thank-you slide.
 

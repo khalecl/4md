@@ -859,6 +859,9 @@ PICTURES
 OTHER
 Mermaid diagrams in ```mermaid blocks (≤ 8 nodes) sit beside text. Display maths `$$ … $$` on its own lines. Code blocks ≤ 12 lines, only for technical audiences.
 
+LANGUAGE
+Write in the language of the topic. Arabic, Hebrew, Persian and Urdu decks are detected automatically and the whole deck is mirrored right-to-left; keep numbers, units and standard names (ISO 50001, kWh) in Latin script.
+
 DO NOT
 Write raw HTML (only the comment directives above), paragraphs over 25 words, more than two plain-bullet slides in a row, made-up statistics presented as fact (mark estimates as "est."), or an Agenda / Thank-you slide.
 
@@ -906,6 +909,9 @@ FOR EACH ### TOPIC USE THIS PATTERN
 
 SUPPORTED MARKDOWN (both outputs)
 **bold**, *italic*, `code`; nested lists (4-space indent); pipe tables with alignment (`:---`, `:---:`, `---:`), same cell count in every row; `> quote`; fenced code with a language; KaTeX maths `$inline$` and `$$display$$` on their own lines (escape `\$`); ```mermaid diagrams (≤ 8 nodes on slides, quote labels with spaces/symbols); `::indent:1::` indented paragraph (document only); `---` rule.
+
+LANGUAGE
+Write in the language of the topic. Arabic, Hebrew, Persian and Urdu decks are detected automatically and the whole deck is mirrored right-to-left; keep numbers, units and standard names (ISO 50001, kWh) in Latin script.
 
 DO NOT USE
 Raw HTML other than the directives above, images, footnotes, setext headings, or numbers typed into headings.
@@ -1252,6 +1258,10 @@ FINISH WITH
                             <option value="16:9">16:9 widescreen</option><option value="16:10">16:10</option><option value="4:3">4:3 standard</option>
                         </select></label>
                         <label>Closing text<input type="text" id="ptClosingText" placeholder="Thank you"></label>
+                        <label>Text direction<select id="ptDirection">
+                            <option value="auto">Auto — detect from the text</option><option value="ltr">Left to right</option><option value="rtl">Right to left (Arabic, Hebrew, Persian, Urdu)</option>
+                        </select></label>
+                        <label>Font for Arabic / Hebrew text<input type="text" id="ptRtlFont" list="dsFontList" placeholder="Arial"></label>
                         <label class="ds-check"><input type="checkbox" id="ptAgenda"> Agenda slide</label>
                         <label class="ds-check"><input type="checkbox" id="ptClosing"> Closing slide</label>
                         <label class="ds-check"><input type="checkbox" id="ptNums"> Slide numbers</label>
@@ -1304,7 +1314,7 @@ FINISH WITH
                 <option>Palatino Linotype</option><option>Franklin Gothic Book</option>
                 <option>Courier New</option><option>Consolas</option>
                 <option>Traditional Arabic</option><option>Simplified Arabic</option>
-                <option>Dubai</option><option>Amiri</option>
+                <option>Dubai</option><option>Amiri</option><option>Sakkal Majalla</option><option>Arabic Typesetting</option><option>Tahoma</option><option>Segoe UI</option><option>Noto Naskh Arabic</option><option>Cairo</option><option>Tajawal</option><option>David</option><option>Miriam</option>
             </datalist>
         </div>
           </div>
@@ -4784,7 +4794,7 @@ FINISH WITH
             titleStyle: 'theme', coverStyle: 'theme', cardStyle: 'soft', motif: 'theme',
             smart: 'auto', icons: true, charts: true, vcenter: true, bullet: 'auto', transition: 'fade',
             agenda: true, closing: true, closingText: 'Thank you', slideNumbers: true, footer: true, coverMeta: true,
-            headFont: '', bodyFont: '', useMasters: true
+            headFont: '', bodyFont: '', useMasters: true, direction: 'auto', rtlFont: 'Arial'
         };
         let PPTX_OPTS = Object.assign({}, PPTX_DEFAULTS);
         try { Object.assign(PPTX_OPTS, JSON.parse(localStorage.getItem('pptx_opts_v1') || '{}')); } catch (e) {}
@@ -4922,37 +4932,37 @@ FINISH WITH
             handshake: '<path d="M2.5 9l4-3.5 5 2 3-1.5L21.5 9v5l-4 3.5-6.5-4.5M2.5 9v5.5l6 4.5 3.5-2.5"/><path d="M11.5 7.5l-3 3 2 1.5 3-2"/>'
         };
         const PPTX_ICON_WORDS = [
-            ['bolt', /energ|power|electric|\bkw|kwh|demand|load|voltage|mw\b/i],
-            ['money', /cost|saving|budget|price|tariff|roi|payback|financ|money|\bsar\b|invest|\$|revenue|capex|opex/i],
-            ['leaf', /carbon|sustain|esg|green|environment|emission|scope\s*[123]|net.?zero|co2|climate/i],
-            ['thermo', /hvac|temperatur|heat|thermal|ahu|boiler/i],
-            ['drop', /water|chill|cool|fluid|leak/i],
-            ['sun', /solar|renewable|\bpv\b|daylight|photovolt/i],
-            ['bulb', /idea|lighting|\blight|\bled\b|innovat|insight/i],
-            ['plug', /meter|metering|electrical|wiring|socket/i],
-            ['users', /staff|people|team|behaviou?r|train|stakeholder|occupant|employee|customer|user/i],
-            ['shield', /safety|risk|reliab|secur|hse|protect|hazard/i],
-            ['check', /complian|approv|verif|done|quality|standard|iso\s?\d|certif|requirement/i],
-            ['gauge', /perform|efficien|kpi|benchmark|metric|speed|capacity/i],
-            ['clock', /time|schedul|hour|duration|deadline|quick|fast|minute/i],
-            ['calendar', /plan|roadmap|calendar|month|week|year|quarter|annual/i],
-            ['chart', /data|analy|report|result|measure|statistic|dashboard/i],
+            ['bolt', /energ|power|electric|\bkw|kwh|demand|load|voltage|mw\b|طاقة|كهرباء|قدرة|حمل/i],
+            ['money', /cost|saving|budget|price|tariff|roi|payback|financ|money|\bsar\b|invest|\$|revenue|capex|opex|تكلفة|تكاليف|وفر|توفير|ميزانية|سعر|تعرفة|استرداد|ريال|استثمار|عائد|עלות|חיסכון|תקציב/i],
+            ['leaf', /carbon|sustain|esg|green|environment|emission|scope\s*[123]|net.?zero|co2|climate|كربون|انبعاث|استدامة|بيئة|مناخ|פחמן|קיימות/i],
+            ['thermo', /hvac|temperatur|heat|thermal|ahu|boiler|تكييف|حرارة|تبريد/i],
+            ['drop', /water|chill|cool|fluid|leak|ماء|مياه|مبرد/i],
+            ['sun', /solar|renewable|\bpv\b|daylight|photovolt|شمس|طاقة متجددة|ألواح/i],
+            ['bulb', /idea|lighting|\blight|\bled\b|innovat|insight|فكرة|إضاءة|ابتكار/i],
+            ['plug', /meter|metering|electrical|wiring|socket|عداد|قياس/i],
+            ['users', /staff|people|team|behaviou?r|train|stakeholder|occupant|employee|customer|user|موظف|أفراد|فريق|تدريب|سلوك|أشخاص|צוות|עובדים/i],
+            ['shield', /safety|risk|reliab|secur|hse|protect|hazard|سلامة|أمان|موثوقية|مخاطر|בטיחות/i],
+            ['check', /complian|approv|verif|done|quality|standard|iso\s?\d|certif|requirement|امتثال|تحقق|جودة|معيار|شهادة|اعتماد|תאימות/i],
+            ['gauge', /perform|efficien|kpi|benchmark|metric|speed|capacity|أداء|كفاءة|مؤشر/i],
+            ['clock', /time|schedul|hour|duration|deadline|quick|fast|minute|وقت|جدول|سريع|זמן/i],
+            ['calendar', /plan|roadmap|calendar|month|week|year|quarter|annual|خطة|خارطة|شهر|سنة|ربع/i],
+            ['chart', /data|analy|report|result|measure|statistic|dashboard|بيانات|تحليل|تقرير|نتائج|נתונים/i],
             ['trend', /growth|increase|reduc|improv|trend|forecast/i],
-            ['gear', /maintenan|operat|control|process|system|optimi|automat|bms|scada/i],
+            ['gear', /maintenan|operat|control|process|system|optimi|automat|bms|scada|تحكم|تشغيل|صيانة|نظام|תחזוקה/i],
             ['wrench', /retrofit|repair|install|upgrade|fix|tool/i],
-            ['building', /building|site|facilit|office|campus|hospital|mall|tower/i],
-            ['factory', /plant|industr|manufactur|factory|refiner|production/i],
-            ['doc', /document|policy|procedur|audit|record|contract|regulat|law/i],
-            ['search', /inspect|survey|find|review|discover|investigat|walk.?through/i],
+            ['building', /building|site|facilit|office|campus|hospital|mall|tower|مبنى|موقع|منشأة|בניין/i],
+            ['factory', /plant|industr|manufactur|factory|refiner|production|مصنع|محطة|صناعة/i],
+            ['doc', /document|policy|procedur|audit|record|contract|regulat|law|وثيقة|سياسة|إجراء|تدقيق|לוח/i],
+            ['search', /inspect|survey|find|review|discover|investigat|walk.?through|فحص|مسح|مراجعة/i],
             ['flag', /milestone|phase|start|launch|kick.?off|goal/i],
-            ['target', /target|objective|aim|focus|priority/i],
+            ['target', /target|objective|aim|focus|priority|هدف|أولوية|יעד/i],
             ['globe', /global|world|market|countr|international|region/i],
             ['rocket', /scale|accelerat|transform|future|next/i],
             ['truck', /logist|transport|fleet|vehicle|supply/i],
             ['lock', /privacy|access|password|cyber/i],
             ['handshake', /partner|agreement|collaborat|vendor|supplier|contractor/i],
             ['book', /learn|course|knowledge|guide|lesson/i],
-            ['star', /best|key|highlight|excellen|award/i]
+            ['star', /best|key|highlight|excellen|award|أهم|أفضل|رئيسي/i]
         ];
         const PPTX_ICON_FALLBACK = ['target', 'check', 'chart', 'bulb', 'star', 'flag'];
         function pickIcon(text, k, explicit) {
@@ -5579,7 +5589,7 @@ FINISH WITH
                 else {
                     s.addShape(pptx.ShapeType.roundRect, { x, y, w, h, fill: { color: th.soft }, line: { color: th.accent, width: 1.25, dashType: 'dash' }, rectRadius: 0.1 });
                     await iconBadge(pptx, s, 'image', x + w / 2 - 0.45, y + h / 2 - 0.75, 0.9, th.soft2, th.strong);
-                    s.addText((v.alt ? v.alt + '\n' : '') + 'Insert picture here', { x: x + 0.3, y: y + h / 2 + 0.25, w: w - 0.6, h: 0.9, fontSize: F.small + 2, color: th.muted, fontFace: th.body, align: 'center', valign: 'top', margin: 0 });
+                    s.addText((v.alt ? v.alt + '\n' : '') + LBL.picture, { x: x + 0.3, y: y + h / 2 + 0.25, w: w - 0.6, h: 0.9, fontSize: F.small + 2, color: th.muted, fontFace: th.body, align: 'center', valign: 'top', margin: 0 });
                 }
                 return;
             }
@@ -5669,7 +5679,7 @@ FINISH WITH
             s.background = { color: th.strong };
             drawMotif(pptx, s, th, th.motif, W * 0.58, 0, W * 0.42, H, on);
             s.addText(String(num).padStart(2, '0'), { x: 0.9, y: H * 0.2, w: 4, h: 1.7, fontSize: 110, bold: true, color: th.dark ? th.bg : th.accent, fontFace: th.head, margin: 0, valign: 'bottom' });
-            if (total > 1) s.addText(('Section ' + num + ' of ' + total).toUpperCase(), { x: 0.95, y: H * 0.2 + 1.85, w: 5, h: 0.35, fontSize: 12, bold: true, charSpacing: 3, color: pxMix(on, th.strong, 0.7), fontFace: th.body, margin: 0 });
+            if (total > 1) s.addText(LBL.section(num, total).toUpperCase(), { x: 0.95, y: H * 0.2 + 1.85, w: 5, h: 0.35, fontSize: 12, bold: true, charSpacing: 3, color: pxMix(on, th.strong, 0.7), fontFace: th.body, margin: 0 });
             s.addText(title, { x: 0.9, y: H * 0.2 + 2.25, w: W * 0.6, h: 1.4, fontSize: 40, color: on, fontFace: th.head, bold: true, valign: 'top', fit: 'shrink', margin: 0 });
             if (O.slideNumbers) s.slideNumber = { x: W - 1.15, y: H - 0.48, w: 0.5, h: 0.3, fontSize: 10, color: pxMix(on, th.strong, 0.7), align: 'right' };
             return s;
@@ -5677,7 +5687,7 @@ FINISH WITH
         function drawAgenda(pptx, th, W, H, O, F, items, footerText) {
             const s = pptx.addSlide();
             drawChrome(pptx, s, th, W, H, O, footerText);
-            drawTitle(pptx, s, th, W, F, 'Agenda', '');
+            drawTitle(pptx, s, th, W, F, LBL.agenda, '');
             const box = bodyBox(W, H);
             const cols = items.length > 5 ? 2 : 1, rows = Math.ceil(items.length / cols);
             const g = 0.35, cw = (box.w - g * (cols - 1)) / cols, rh = Math.min(0.95, (box.h - 0.15 * (rows - 1)) / rows);
@@ -5738,7 +5748,7 @@ FINISH WITH
             s.background = { color: th.strong };
             drawMotif(pptx, s, th, th.motif, W * 0.66, H * 0.3, W * 0.34, H * 0.7, on);
             addLogo(s, W / 2 - 1.0, 0.7, 2.0, 0.8, { addShape: (t, o) => s.addShape(t, o), ShapeType: pptx.ShapeType });
-            s.addText(O.closingText || 'Thank you', { x: 1, y: H * 0.3, w: W - 2, h: 1.5, fontSize: 54, bold: true, color: on, fontFace: th.head, align: 'center', valign: 'middle', fit: 'shrink', margin: 0 });
+            s.addText(closingLabel(O), { x: 1, y: H * 0.3, w: W - 2, h: 1.5, fontSize: 54, bold: true, color: on, fontFace: th.head, align: 'center', valign: 'middle', fit: 'shrink', margin: 0 });
             s.addShape(pptx.ShapeType.rect, { x: W / 2 - 0.6, y: H * 0.3 + 1.6, w: 1.2, h: 0.08, fill: { color: th.dark ? th.bg : th.accent }, line: { width: 0 } });
             const who = [DOC_META.author, DOC_META.company].filter(Boolean).join('   ·   ');
             if (who) s.addText(who, { x: 1, y: H * 0.3 + 1.85, w: W - 2, h: 0.5, fontSize: 18, color: pxMix(on, th.strong, 0.85), fontFace: th.body, align: 'center', margin: 0 });
@@ -5919,7 +5929,7 @@ FINISH WITH
             const g = TPL.geo.section;
             const tb = tplBox(g.title, { x: W * 0.08, y: H * 0.35, w: W * 0.84, h: H * 0.2 });
             s.addText(title, { objectName: '4md:title', x: tb.x, y: tb.y, w: tb.w, h: tb.h, fontSize: 40, bold: true, color: th.title, fontFace: th.head, valign: 'bottom', fit: 'shrink', margin: 0 });
-            const lab = total > 1 ? 'Section ' + num + ' of ' + total : '';
+            const lab = total > 1 ? LBL.section(num, total) : '';
             if (lab) {
                 const bb = tplBox(g.body, { x: tb.x, y: tb.y + tb.h + 0.1, w: tb.w, h: 0.6 });
                 s.addText(lab, { objectName: g.body ? '4md:body' : '', x: bb.x, y: bb.y, w: bb.w, h: Math.min(bb.h, 1.2), fontSize: 18, color: th.accent, fontFace: th.body, valign: 'top', margin: 0 });
@@ -5947,7 +5957,74 @@ FINISH WITH
         }
         function tplClosing(pptx, th, W, H, O) {
             const who = [DOC_META.author, DOC_META.company].filter(Boolean).join('   ·   ');
-            return tplCover(pptx, th, W, H, { title: O.closingText || 'Thank you', sub: who }, Object.assign({}, O, { coverMeta: false }));
+            return tplCover(pptx, th, W, H, { title: closingLabel(O), sub: who }, Object.assign({}, O, { coverMeta: false }));
+        }
+
+
+        // ===== RIGHT-TO-LEFT DECKS (Arabic, Hebrew, Persian, Urdu …) =====
+        const DECK_LABELS = {
+            'en-US': { agenda: 'Agenda', section: (n, t) => 'Section ' + n + ' of ' + t, cont: ' (cont.)', picture: 'Insert picture here', thanks: 'Thank you' },
+            'ar-SA': { agenda: 'جدول الأعمال', section: (n, t) => 'القسم ' + n + ' من ' + t, cont: ' (تابع)', picture: 'أدرج صورة هنا', thanks: 'شكراً لكم' },
+            'fa-IR': { agenda: 'دستور جلسه', section: (n, t) => 'بخش ' + n + ' از ' + t, cont: ' (ادامه)', picture: 'تصویر را اینجا قرار دهید', thanks: 'سپاسگزاریم' },
+            'he-IL': { agenda: 'סדר היום', section: (n, t) => 'חלק ' + n + ' מתוך ' + t, cont: ' (המשך)', picture: 'הוסיפו תמונה כאן', thanks: 'תודה רבה' }
+        };
+        let LBL = DECK_LABELS['en-US'];
+        function closingLabel(O) { const t = (O.closingText || '').trim(); return (!t || t === 'Thank you') ? LBL.thanks : t; }
+        function rtlInfo(md) {
+            const t = md.replace(/<!--[\s\S]*?-->|```[\s\S]*?```|\$\$[\s\S]*?\$\$/g, ' ');
+            const ar = (t.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
+            const he = (t.match(/[\u0590-\u05FF\uFB1D-\uFB4F]/g) || []).length;
+            const la = (t.match(/[A-Za-z]/g) || []).length;
+            const fa = (t.match(/[\u067E\u0686\u0698\u06AF\u06CC]/g) || []).length;   // letters used in Persian, not Arabic
+            const rtl = (ar + he) > la * 0.6 && (ar + he) > 20;
+            return { rtl, lang: he > ar ? 'he-IL' : (fa > ar * 0.03 && fa > 3 ? 'fa-IR' : 'ar-SA') };
+        }
+        function deckDirection(O, md) {
+            const auto = rtlInfo(md);
+            if (O.direction === 'rtl') return { rtl: true, lang: auto.lang };
+            if (O.direction === 'ltr') return { rtl: false, lang: 'en-US' };
+            return auto.rtl ? auto : { rtl: false, lang: 'en-US' };
+        }
+        // Mirror one slide: every box moves to the other side, text runs right-to-left.
+        function mirrorSlideXml(x, slideW, lang, font) {
+            const FLIP = /prst="(chevron|homePlate|parallelogram|rightArrow|leftArrow|pentagon)"/;
+            const esc = xmlEsc(font || 'Arial');
+            // positions
+            x = x.replace(/<p:(sp|pic|graphicFrame|cxnSp)>[\s\S]*?<\/p:\1>/g, blk => {
+                blk = blk.replace(/<a:off x="(-?\d+)" y="(-?\d+)"\/>\s*<a:ext cx="(\d+)" cy="(\d+)"\/>/, (m, ox, oy, cx, cy) =>
+                    '<a:off x="' + Math.max(0, slideW - (+ox) - (+cx)) + '" y="' + oy + '"/><a:ext cx="' + cx + '" cy="' + cy + '"/>');
+                if (FLIP.test(blk)) blk = blk.replace(/<a:xfrm(?![^>]*flipH)/, '<a:xfrm flipH="1"');
+                const isPh = /<p:ph\b/.test(blk), phType = xmlAttr(blk, /<p:ph\b[^>]*\btype="([^"]+)"/);
+                const keepAlign = isPh && /ctrTitle|subTitle/.test(phType);
+                // paragraphs
+                blk = blk.replace(/<a:p>(?!<a:pPr)/g, '<a:p><a:pPr/>');
+                blk = blk.replace(/<a:pPr\b([^>]*?)(\/?)>/g, (m, attrs, close) => {
+                    let a = attrs.replace(/\s*rtl="[01]"/, '') + ' rtl="1"';
+                    if (/\balgn="l"/.test(a)) a = a.replace('algn="l"', 'algn="r"');
+                    else if (/\balgn="r"/.test(a)) a = a.replace('algn="r"', 'algn="l"');
+                    else if (!/\balgn=/.test(a) && !keepAlign) a += ' algn="r"';
+                    return '<a:pPr' + a + close + '>';
+                });
+                // runs: language + font for Arabic/Hebrew script
+                blk = blk.replace(/<a:(rPr|endParaRPr|defRPr)\b([^>]*?)(\/?)>/g, (m, tag, attrs, close) => {
+                    attrs = attrs.replace(/\s+spc="-?\d+"/, '').replace(/\s+i="1"/, '');
+                    let a = /\blang="/.test(attrs) ? attrs.replace(/\blang="[^"]*"/, 'lang="' + lang + '"') : attrs + ' lang="' + lang + '"';
+                    if (!/altLang=/.test(a)) a += ' altLang="en-US"';
+                    return close ? '<a:' + tag + a + '><a:cs typeface="' + esc + '"/></a:' + tag + '>' : '<a:' + tag + a + '>';
+                });
+                blk = blk.replace(/<a:cs typeface="[^"]*"([^>]*)\/>/g, '<a:cs typeface="' + esc + '"$1/>');
+                // a run that had children but no <a:cs>: add it before the closing tag
+                blk = blk.replace(/(<a:rPr\b[^>]*[^/]>)((?:(?!<\/a:rPr>)[\s\S])*?)<\/a:rPr>/g, (m, open, body) =>
+                    /<a:cs\b/.test(body) ? m : open + body + '<a:cs typeface="' + esc + '"/></a:rPr>');
+                return blk;
+            });
+            x = x.replace(/<a:tblPr\b(?![^>]*\brtl=)/g, '<a:tblPr rtl="1"');
+            return x;
+        }
+        function rtlThemeFonts(themeXml, font) {
+            const f = xmlEsc(font || 'Arial');
+            return themeXml.replace(/(<a:(?:major|minor)Font>[\s\S]*?<a:cs typeface=")[^"]*"/g, '$1' + f + '"')
+                           .replace(/(<a:font script="(?:Arab|Hebr)" typeface=")[^"]*"/g, '$1' + f + '"');
         }
 
         // --- the finishing pass: clean package, theme, transitions, template merge ---
@@ -6097,6 +6174,13 @@ FINISH WITH
                 }
                 F[n] = x;
             }
+            // 5b. right-to-left: mirror the layout, run text right-to-left, Arabic/Hebrew fonts
+            if (opt.rtl) {
+                const sw = +xmlAttr(F['ppt/presentation.xml'], /<p:sldSz[^>]*\bcx="(\d+)"/) || 12192000;
+                slideNames.forEach(n => { F[n] = mirrorSlideXml(F[n], sw, opt.rtl.lang, opt.rtl.font); });
+                F['ppt/presentation.xml'] = F['ppt/presentation.xml'].replace(/<p:presentation\b(?![^>]*\brtl=)/, '<p:presentation rtl="1"');
+                Object.keys(F).filter(n => /^ppt\/theme\/theme\d+\.xml$/.test(n)).forEach(n => { F[n] = rtlThemeFonts(F[n], opt.rtl.font); });
+            }
             // 6. content types: drop parts that do not exist, declare the new ones
             let ct = F['[Content_Types].xml'];
             ct = ct.replace(/<Override\b[^>]*PartName="\/([^"]+)"[^>]*\/>/g, (t, p) => F[p] ? t : '');
@@ -6131,7 +6215,9 @@ FINISH WITH
             const darkOver = T && T.dark ? { dark: true, bg: T.bgHex || '1F1F1F', text: T.lt1 || 'FFFFFF', title: T.lt1 || 'FFFFFF', muted: pxMix(T.lt1 || 'FFFFFF', T.bgHex || '1F1F1F', 0.65) } : null;
             const th = getDeckTheme(O, darkOver), F = deckFonts(O);
             TPL = T;
-            try { return await buildDeckInner(markdown, O, th, F, T); } finally { TPL = null; }
+            const dir = deckDirection(O, markdown);
+            LBL = DECK_LABELS[dir.rtl ? dir.lang : 'en-US'] || DECK_LABELS['ar-SA'];
+            try { return await buildDeckInner(markdown, O, th, F, T); } finally { TPL = null; LBL = DECK_LABELS['en-US']; }
         }
         async function buildDeckInner(markdown, O, th, F, T) {
             FONT_K = /georgia|times|cambria|garamond|book|serif|palatino/i.test(th.head + th.body) ? 0.62 : 0.56;
@@ -6168,7 +6254,7 @@ FINISH WITH
                     else {
                         s = pptx.addSlide();
                         drawChrome(pptx, s, th, W, H, O, footerText);
-                        drawTitle(pptx, s, th, W, F, (sl.title || title) + (p ? ' (cont.)' : ''), sl.kicker);
+                        drawTitle(pptx, s, th, W, F, (sl.title || title) + (p ? LBL.cont : ''), sl.kicker);
                         await drawContent(pptx, s, th, O, F, pages[p], box);
                     }
                     if (sl.notes && p === 0) s.addNotes(sl.notes);
@@ -6185,7 +6271,8 @@ FINISH WITH
             const fileName = (title.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'presentation') + '.pptx';
             if (typeof JSZip !== 'undefined') {
                 const buf = await pptx.write({ outputType: 'arraybuffer' });
-                const blob = await finishDeck(buf, { transition: PPTX_OPTS.transition, bulletColor: th.accent, theme: th, tpl, kinds });
+                const dir = deckDirection(PPTX_OPTS, markdown);
+                const blob = await finishDeck(buf, { transition: PPTX_OPTS.transition, bulletColor: th.accent, theme: th, tpl, kinds, rtl: dir.rtl ? { lang: dir.lang, font: PPTX_OPTS.rtlFont || 'Arial' } : null });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob); a.download = fileName;
                 document.body.appendChild(a); a.click(); a.remove();
@@ -6367,7 +6454,7 @@ FINISH WITH
              ['ptMotif', 'motif'], ['ptBullet', 'bullet'], ['ptSmart', 'smart'], ['ptTransition', 'transition'], ['ptIcons', 'icons'], ['ptCharts', 'charts'],
              ['ptVcenter', 'vcenter'], ['ptAgenda', 'agenda'], ['ptClosing', 'closing'], ['ptNums', 'slideNumbers'], ['ptFooter', 'footer'], ['ptMeta', 'coverMeta']
             ].forEach(([id, k]) => bind(id, k));
-            bind('ptHead', 'headFont', v => v.trim()); bind('ptBody', 'bodyFont', v => v.trim()); bind('ptClosingText', 'closingText', v => v.trim());
+            bind('ptHead', 'headFont', v => v.trim()); bind('ptDirection', 'direction'); bind('ptRtlFont', 'rtlFont', v => v.trim() || 'Arial'); bind('ptBody', 'bodyFont', v => v.trim()); bind('ptClosingText', 'closingText', v => v.trim());
             renderGrid();
             $('ptIconList').innerHTML = Object.keys(PPTX_ICONS).map(n => '<code>' + n + '</code>').join(' ');
 

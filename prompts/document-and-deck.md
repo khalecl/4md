@@ -38,6 +38,9 @@ FOR EACH ### TOPIC USE THIS PATTERN
 SUPPORTED MARKDOWN (both outputs)
 **bold**, *italic*, `code`; nested lists (4-space indent); pipe tables with alignment (`:---`, `:---:`, `---:`), same cell count in every row; `> quote`; fenced code with a language; KaTeX maths `$inline$` and `$$display$$` on their own lines (escape `\$`); ```mermaid diagrams (≤ 8 nodes on slides, quote labels with spaces/symbols); `::indent:1::` indented paragraph (document only); `---` rule.
 
+LANGUAGE
+Write in the language of the topic. Arabic, Hebrew, Persian and Urdu decks are detected automatically and the whole deck is mirrored right-to-left; keep numbers, units and standard names (ISO 50001, kWh) in Latin script.
+
 DO NOT USE
 Raw HTML other than the directives above, images, footnotes, setext headings, or numbers typed into headings.
 
