@@ -1157,8 +1157,13 @@ FINISH WITH
                         <option value="narrow">Narrow</option><option value="normal" selected>Normal</option>
                         <option value="moderate">Moderate</option><option value="wide">Wide</option>
                     </select></label>
+                    <label>Text direction<select id="dsDirection">
+                        <option value="auto">Auto — detect from the text</option><option value="ltr">Left to right</option>
+                        <option value="rtl">Right to left (Arabic, Hebrew, Persian, Urdu)</option>
+                    </select></label>
                     <label class="ds-check"><input type="checkbox" id="dsToc"> Table of contents</label>
                 </div>
+                <p class="ds-note">Right to left mirrors the Word file and the PDF: paragraphs, lists, tables, quotes and page numbers run from the right. Code and equations stay left to right. The Arabic/Hebrew font is the “Complex-script font” on the Template tab (Arial if empty).</p>
             </section>
 
             <!-- ── HEADER & FOOTER ────────────────────────── -->
@@ -1516,7 +1521,8 @@ FINISH WITH
             footerText: '',
             differentFirstPage: true,
             toc: false,
-            tocDepth: 3
+            tocDepth: 3,
+            direction: 'auto'
         });
 
         function themePageDims() {
@@ -2023,6 +2029,7 @@ FINISH WITH
 
         async function renderPreview() {
             let md = forDocument(editor.value);
+            try { preview.dir = docDirection(md).rtl ? 'rtl' : 'ltr'; } catch (e) {}
 
             // Extract mermaid blocks BEFORE marked processes them
             const mermaidBlocks = [];
@@ -2543,13 +2550,16 @@ FINISH WITH
             zip.file('docProps/core.xml', getCoreXml());
             zip.file('docProps/app.xml', getAppXml(markdown));
             zip.file('word/_rels/document.xml.rels', getDocumentRelsWithImages(imageRels));
-            zip.file('word/styles.xml', getStyles());
-            zip.file('word/numbering.xml', getNumbering());
+            const _dir = docDirection(markdown);
+            const _rtl = x => docxReorder(_dir.rtl ? docxRtl(x, _dir.lang, DOC_THEME.csFont || 'Arial') : x);
+            docXml = _rtl(docXml);
+            zip.file('word/styles.xml', _rtl(getStyles()));
+            zip.file('word/numbering.xml', _rtl(getNumbering()));
             zip.file('word/settings.xml', getSettings());
             zip.file('word/fontTable.xml', getFontTable());
             zip.file('word/webSettings.xml', getWebSettings());
-            zip.file('word/footer1.xml', getFooter());
-            zip.file('word/header1.xml', getHeader());
+            zip.file('word/footer1.xml', _rtl(getFooter()));
+            zip.file('word/header1.xml', _rtl(getHeader()));
             zip.file('word/theme/theme1.xml', getTheme());
             zip.file('word/document.xml', docXml);
 
@@ -3969,7 +3979,7 @@ FINISH WITH
                 bodySize: $('dsBodySize'), line: $('dsLine'), accent: $('dsAccent'),
                 fCs: $('dsfCs'), tableStyle: $('dsTableStyle'), titleRule: $('dsTitleRule'),
                 pageSize: $('dsPageSize'), orient: $('dsOrient'), margins: $('dsMargins'),
-                toc: $('dsToc'),
+                toc: $('dsToc'), direction: $('dsDirection'),
                 headerMode: $('dsHeaderMode'), headerText: $('dsHeaderText'),
                 footerMode: $('dsFooterMode'), footerText: $('dsFooterText'),
                 firstPage: $('dsFirstPage'),
@@ -4043,6 +4053,7 @@ FINISH WITH
                     footerText: els.footerText.value,
                     differentFirstPage: els.firstPage.checked,
                     toc: els.toc.checked,
+                    direction: els.direction ? els.direction.value : 'auto',
                     tocDepth: 3,
                                         tableAlign: els.tblAlign.value,
                     tableHeadAlign: els.tblHeadAlign.value,
@@ -4640,21 +4651,22 @@ FINISH WITH
             return m ? m[1].replace(/[*_`]/g, '').trim() : '';
         }
 
-        function pdfStyleCss(scope) {
+        function pdfStyleCss(scope, rtl) {
+            const AL = a => a === 'left' ? 'start' : a === 'right' ? 'end' : a === 'both' ? 'justify' : a;
             const T = DOC_THEME;
             const pt = hp => (hp / 2) + 'pt';
             const tw = t => (t / 20) + 'pt';
             const col = c => (c && c !== 'auto') ? '#' + c : '#1a1a1a';
-            const fam = (s, major) => '"' + (s.font || (major ? T.headingFont : T.bodyFont)) + '", sans-serif';
+            const fam = (s, major) => cssFontList(s.font || (major ? T.headingFont : T.bodyFont));
             function block(sel, key, major) {
                 const s = resolveStyle(key);
                 return scope + ' ' + sel + '{font-family:' + fam(s, major) + ';font-size:' + pt(s.sizeHp)
                     + ';color:' + col(s.color) + ';font-weight:' + (s.bold ? 700 : 400)
                     + ';font-style:' + (s.italic ? 'italic' : 'normal')
-                    + ';margin:' + tw(s.before) + ' ' + tw(s.indRight || 0) + ' ' + tw(s.after) + ' ' + tw(s.indLeft || 0)
+                    + ';margin:' + tw(s.before) + ' ' + tw((rtl ? s.indLeft : s.indRight) || 0) + ' ' + tw(s.after) + ' ' + tw((rtl ? s.indRight : s.indLeft) || 0)
                     + ';line-height:' + (s.line / 240 * 1.15).toFixed(2)
                     + (s.indFirst ? ';text-indent:' + tw(s.indFirst) : '')
-                    + (s.align ? ';text-align:' + (s.align === 'both' ? 'justify' : s.align) : '')
+                    + (s.align ? ';text-align:' + AL(s.align) : '')
                     + ';border:none;padding:0;page-break-after:avoid;}';
             }
             const nrm = resolveStyle('normal');
@@ -4671,7 +4683,7 @@ FINISH WITH
                 tableCss = scope + ' table{border:none;border-top:2px solid ' + bc + ';border-bottom:2px solid ' + bc + ';}'
                          + scope + ' th,' + scope + ' td{border:none;border-bottom:1px solid #BFBFBF;}';
             }
-            return scope + '{background:#fff;padding:0;overflow:visible;font-family:' + fam(nrm, false)
+            return scope + '{background:#fff;padding:0;overflow:visible;direction:' + (rtl ? 'rtl' : 'ltr') + ';text-align:start;font-family:' + fam(nrm, false)
                  + ';font-size:' + pt(nrm.sizeHp) + ';color:' + col(nrm.color)
                  + ';line-height:' + (nrm.line / 240 * 1.15).toFixed(2) + ';}'
                  + block('p', 'normal', false)
@@ -4680,19 +4692,20 @@ FINISH WITH
                  + block('h2', 'h1', true) + block('h3', 'h2', true)
                  + block('h4', 'h3', false) + block('h5', 'h4', false)
                  + block('blockquote', 'quote', false)
-                 + scope + ' blockquote{border-left:3px solid #' + T.quoteBorder + ';padding-left:10pt;}'
+                 + scope + ' blockquote{border:none;border-inline-start:3px solid #' + T.quoteBorder + ';padding-inline-start:10pt;}'
                  + scope + ' blockquote p{margin:0 0 4pt;font:inherit;color:inherit;}'
                  + scope + ' li{margin:0 0 3pt;}'
-                 + scope + ' ul,' + scope + ' ol{margin:0 0 ' + tw(nrm.after) + ';padding-left:22pt;}'
+                 + scope + ' ul,' + scope + ' ol{margin:0 0 ' + tw(nrm.after) + ';padding:0;padding-inline-start:22pt;}'
                  + scope + ' table{width:100%;border-collapse:collapse;margin:6pt 0 10pt;font-size:' + pt(tb.sizeHp) + ';}'
-                 + scope + ' th,' + scope + ' td{padding:4pt 6.5pt;text-align:' + (T.tableAlign === 'both' ? 'justify' : T.tableAlign)
+                 + scope + ' th,' + scope + ' td{padding:4pt 6.5pt;text-align:' + AL(T.tableAlign)
                  + ';vertical-align:' + (T.tableVAlign === 'center' ? 'middle' : T.tableVAlign) + ';}'
-                 + scope + ' th{font-weight:700;text-align:' + T.tableHeadAlign + ';vertical-align:'
+                 + scope + ' th{font-weight:700;text-align:' + AL(T.tableHeadAlign) + ';vertical-align:'
                  + (T.tableHeadVAlign === 'center' ? 'middle' : T.tableHeadVAlign) + ';background:'
                  + (T.tableHeaderFill && T.tableHeaderFill !== 'FFFFFF' ? '#' + T.tableHeaderFill : 'transparent') + ';}'
                  + tableCss
                  + scope + ' tr{page-break-inside:avoid;}'
-                 + scope + ' pre{background:#' + T.codeFill + ';color:' + col(cd.color) + ';border:1px solid #' + T.codeBorder
+                 + scope + ' pre,' + scope + ' code,' + scope + ' .katex{direction:ltr;unicode-bidi:isolate;}'
+                 + scope + ' pre{text-align:left;background:#' + T.codeFill + ';color:' + col(cd.color) + ';border:1px solid #' + T.codeBorder
                  + ';border-radius:0;padding:6pt 8pt;font-size:' + pt(cd.sizeHp) + ';white-space:pre-wrap;word-break:break-word;}'
                  + scope + ' code{font-family:"' + (cd.font || T.monoFont) + '",monospace;background:none;color:inherit;padding:0;}'
                  + scope + ' hr{border:none;border-top:1px solid #BFBFBF;margin:10pt 0;}'
@@ -4701,87 +4714,153 @@ FINISH WITH
                  + scope + ' .katex-display{margin:8pt 0;}';
         }
 
-        async function markdownToPdf(markdown) {
-            if (typeof html2pdf === 'undefined') throw new Error('PDF library did not load — check your connection');
-            await renderPreview();
 
-            const T = DOC_THEME;
-            const M = DOC_META;
-            const dims = themePageDims();                 // twips
-            const mg = T.margins;
-            const mm = t => t / 56.6929;                  // twips -> mm
-            const contentPx = Math.round((dims.w - mg.left - mg.right) / 1440 * 96);
 
-            const host = document.createElement('div');
-            host.style.cssText = 'position:absolute;left:-30000px;top:0;width:' + contentPx + 'px;background:#fff;';
-            const style = document.createElement('style');
-            style.textContent = pdfStyleCss('.pdf-doc');
-            const doc = document.createElement('div');
-            doc.className = 'pdf-doc';
-            doc.innerHTML = preview.innerHTML;
-            // Mermaid SVGs reuse element ids; give clones unique ids so html2canvas keeps their styles
-            doc.querySelectorAll('.mermaid-container svg').forEach((svg, n) => {
-                svg.style.maxWidth = '100%';
-            });
-            host.appendChild(style);
-            host.appendChild(doc);
-            document.body.appendChild(host);
-
-            const title = M.title || pdfTitleFromMarkdown(markdown) || 'document';
-            const fileName = title.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'document';
-
-            let headerText = '';
-            if (T.headerMode === 'text') headerText = T.headerText || '';
-            if (T.headerMode === 'title') headerText = title;
-
-            try {
-                const opt = {
-                    margin: [mm(mg.top), mm(mg.right), mm(mg.bottom), mm(mg.left)],
-                    filename: fileName + '.pdf',
-                    image: { type: 'jpeg', quality: 0.96 },
-                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: contentPx },
-                    jsPDF: { unit: 'mm', format: [mm(dims.w), mm(dims.h)],
-                             orientation: T.landscape ? 'landscape' : 'portrait', compress: true },
-                    pagebreak: { mode: ['css', 'legacy'],
-                                 avoid: ['tr', 'pre', 'blockquote', 'img', 'h1', 'h2', 'h3', 'h4', '.mermaid-container', '.katex-display'] }
-                };
-
-                await html2pdf().set(opt).from(doc).toPdf().get('pdf').then(pdf => {
-                    const n = pdf.internal.getNumberOfPages();
-                    const W = pdf.internal.pageSize.getWidth();
-                    const H = pdf.internal.pageSize.getHeight();
-                    const L = mm(mg.left), R = W - mm(mg.right);
-                    for (let p = 1; p <= n; p++) {
-                        if (p === 1 && T.differentFirstPage) continue;
-                        pdf.setPage(p);
-                        pdf.setFontSize(9);
-                        pdf.setTextColor(128, 128, 128);
-                        if (headerText) {
-                            const y = Math.max(8, mm(mg.top) / 2);
-                            pdf.text(headerText, W / 2, y, { align: 'center' });
-                            pdf.setDrawColor(208, 208, 208);
-                            pdf.setLineWidth(0.2);
-                            pdf.line(L, y + 2, R, y + 2);
-                        }
-                        const fy = H - Math.max(6, mm(mg.bottom) / 2);
-                        if (T.footerMode === 'page') {
-                            pdf.text(String(p), W / 2, fy, { align: 'center' });
-                        } else if (T.footerMode === 'textPage') {
-                            if (T.footerText) pdf.text(T.footerText, L, fy);
-                            pdf.text(String(p), R, fy, { align: 'right' });
-                        }
-                    }
-                    pdf.setProperties({
-                        title: title,
-                        subject: M.subject || '',
-                        author: M.author || '',
-                        keywords: M.keywords || '',
-                        creator: 'Microsoft Word'
-                    });
-                }).save();
-            } finally {
-                if (host.parentNode) host.parentNode.removeChild(host);
+        // Put WordprocessingML properties in the order the schema requires (Word reports "unreadable content" otherwise)
+        const W_ORDER = {
+            pPr: 'pStyle keepNext keepLines pageBreakBefore framePr widowControl numPr suppressLineNumbers pBdr shd tabs suppressAutoHyphens kinsoku wordWrap overflowPunct topLinePunct autoSpaceDE autoSpaceDN bidi adjustRightInd snapToGrid spacing ind contextualSpacing mirrorIndents suppressOverlap jc textDirection textAlignment textboxTightWrap outlineLvl divId cnfStyle rPr sectPr pPrChange',
+            rPr: 'ins del moveFrom moveTo rStyle rFonts b bCs i iCs caps smallCaps strike dstrike outline shadow emboss imprint noProof snapToGrid vanish webHidden color spacing w kern position sz szCs highlight u effect bdr shd fitText vertAlign rtl cs em lang eastAsianLayout specVanish oMath rPrChange',
+            tblPr: 'tblStyle tblpPr tblOverlap bidiVisual tblStyleRowBandSize tblStyleColBandSize tblW jc tblCellSpacing tblInd tblBorders shd tblLayout tblCellMar tblLook tblCaption tblDescription tblPrChange',
+            sectPr: 'headerReference footerReference footnotePr endnotePr type pgSz pgMar paperSrc pgBorders lnNumType pgNumType cols formProt vAlign noEndnote titlePg textDirection bidi rtlGutter docGrid printerSettings sectPrChange'
+        };
+        const W_RANK = {};
+        Object.keys(W_ORDER).forEach(k => { W_RANK[k] = {}; W_ORDER[k].split(' ').forEach((n, i) => { W_RANK[k][n] = i; }); });
+        W_RANK.sectPr.footerReference = W_RANK.sectPr.headerReference;   // header/footer references may interleave
+        function docxReorder(xml) {
+            if (typeof DOMParser === 'undefined' || !xml || xml.indexOf('<w:') < 0) return xml;
+            const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+            let doc;
+            try { doc = new DOMParser().parseFromString(xml, 'application/xml'); } catch (e) { return xml; }
+            if (doc.getElementsByTagName('parsererror').length) return xml;
+            let changed = false;
+            for (const tag of Object.keys(W_ORDER)) {
+                const rank = W_RANK[tag];
+                const list = doc.getElementsByTagNameNS(W, tag);
+                for (let i = 0; i < list.length; i++) {
+                    const el = list[i];
+                    const kids = Array.from(el.childNodes).filter(n => n.nodeType === 1);
+                    if (kids.length < 2) continue;
+                    const sorted = kids.map((n, j) => ({ n, j, r: n.namespaceURI === W && n.localName in rank ? rank[n.localName] : 999 }))
+                                       .sort((a, b) => a.r - b.r || a.j - b.j).map(o => o.n);
+                    if (sorted.every((n, j) => n === kids[j])) continue;
+                    sorted.forEach(n => el.appendChild(n));
+                    changed = true;
+                }
             }
+            if (!changed) return xml;
+            const out = new XMLSerializer().serializeToString(doc);
+            return /^<\?xml/.test(out) ? out : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + out;
+        }
+
+        // ===== DOCUMENT DIRECTION (DOCX + PDF) =====
+        function docDirection(md) {
+            const mode = DOC_THEME.direction || 'auto';
+            const auto = rtlInfo(String(md || ''));
+            if (mode === 'rtl') return { rtl: true, lang: auto.lang === 'en-US' ? 'ar-SA' : auto.lang };
+            if (mode === 'ltr') return { rtl: false, lang: 'en-US' };
+            return auto.rtl ? auto : { rtl: false, lang: 'en-US' };
+        }
+        // Insert a child element into a WordprocessingML properties block in schema order:
+        // before the first existing child that must come after it, else before the closing tag.
+        function wInsert(block, tagName, child, after) {
+            if (new RegExp('<w:' + tagName + '\\b').test(block)) return block;
+            const re = new RegExp('<w:(' + after.join('|') + ')\\b');
+            const m = block.slice(1).match(re);       // skip the opening "<"
+            if (m) { const i = m.index + 1; return block.slice(0, i) + child + block.slice(i); }
+            const close = block.lastIndexOf('</');
+            return block.slice(0, close) + child + block.slice(close);
+        }
+        const W_PPR_AFTER_BIDI = ['adjustRightInd', 'snapToGrid', 'spacing', 'ind', 'contextualSpacing', 'mirrorIndents', 'suppressOverlap', 'jc',
+            'textDirection', 'textAlignment', 'textboxTightWrap', 'outlineLvl', 'divId', 'cnfStyle', 'rPr', 'sectPr', 'pPrChange'];
+        const W_TBLPR_AFTER_BIDI = ['tblStyleRowBandSize', 'tblStyleColBandSize', 'tblW', 'jc', 'tblCellSpacing', 'tblInd', 'tblBorders', 'shd',
+            'tblLayout', 'tblCellMar', 'tblLook', 'tblCaption', 'tblDescription', 'tblPrChange'];
+        const W_SECT_AFTER_BIDI = ['rtlGutter', 'docGrid', 'printerSettings', 'sectPrChange'];
+        function docxRtl(xml, lang, csFont) {
+            // paragraphs: right-to-left (code blocks stay left-to-right)
+            xml = xml.replace(/<w:p>(?!<w:pPr)/g, '<w:p><w:pPr></w:pPr>');
+            xml = xml.replace(/<w:pPr\/>/g, '<w:pPr></w:pPr>');
+            xml = xml.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (m) => {
+                if (/<w:pStyle w:val="Code"\/>/.test(m)) return m;
+                return wInsert(m, 'bidi', '<w:bidi/>', W_PPR_AFTER_BIDI);
+            });
+            xml = xml.replace(/<w:pPr><\/w:pPr>/g, '');
+            // tables read right-to-left
+            xml = xml.replace(/<w:tblPr>[\s\S]*?<\/w:tblPr>/g, m => wInsert(m, 'bidiVisual', '<w:bidiVisual/>', W_TBLPR_AFTER_BIDI));
+            // page sections
+            xml = xml.replace(/<w:sectPr\b[^>]*>[\s\S]*?<\/w:sectPr>/g, m => wInsert(m, 'bidi', '<w:bidi/>', W_SECT_AFTER_BIDI));
+            // runs: Word uses the complex-script settings (bCs, iCs, szCs, cs font) for Arabic and Hebrew letters
+            xml = xml.replace(/<w:b( w:val="[^"]*")?\/>(?!<w:bCs)/g, '<w:b$1/><w:bCs$1/>');
+            xml = xml.replace(/<w:i( w:val="[^"]*")?\/>(?!<w:iCs)/g, '<w:i$1/><w:iCs$1/>');
+            xml = xml.replace(/<w:sz w:val="(\d+)"\/>(?!<w:szCs)/g, '<w:sz w:val="$1"/><w:szCs w:val="$1"/>');
+            if (csFont) {
+                const f = escapeXml(csFont);
+                xml = xml.replace(/<w:rFonts\b([^>]*?)\/>/g, (m, a) => {
+                    a = a.replace(/\s+w:cs="[^"]*"/, '').replace(/\s+w:cstheme="[^"]*"/, '');
+                    return '<w:rFonts' + a + ' w:cs="' + f + '"/>';
+                });
+            }
+            xml = xml.replace(/(<w:lang\b[^>]*\bw:bidi=")[^"]*"/g, '$1' + lang + '"');
+            return xml;
+        }
+
+        // ===== PDF from the browser's print engine (real text, true page breaks, Arabic shaping) =====
+        function cssStr(s) { return '"' + String(s || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ') + '"'; }
+        function buildPrintHtml(markdown) {
+            const T = DOC_THEME, M = DOC_META;
+            const md = forDocument(markdown);
+            const dir = docDirection(md);
+            const dims = themePageDims();                       // twips
+            const mg = T.margins;
+            const mm = t => (t / 56.6929).toFixed(2) + 'mm';
+            const title = M.title || pdfTitleFromMarkdown(md) || 'document';
+            const fileName = title.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'document';
+            const head = T.headerMode === 'text' ? (T.headerText || '') : T.headerMode === 'title' ? title : '';
+            const S = dir.rtl ? 'right' : 'left', E = dir.rtl ? 'left' : 'right';
+            const box = 'font-family:' + cssFontList(T.bodyFont) + ';font-size:9pt;color:#808080;';
+            let page = '@page{size:' + mm(dims.w) + ' ' + mm(dims.h) + ';margin:' + mm(mg.top) + ' ' + mm(mg.right) + ' ' + mm(mg.bottom) + ' ' + mm(mg.left) + ';';
+            if (head) page += '@top-center{content:' + cssStr(head) + ';' + box + 'border-bottom:0.5pt solid #D0D0D0;vertical-align:bottom;padding-bottom:3pt;}';
+            if (T.footerMode === 'page') page += '@bottom-center{content:counter(page);' + box + '}';
+            else if (T.footerMode === 'textPage') {
+                if (T.footerText) page += '@bottom-' + S + '{content:' + cssStr(T.footerText) + ';' + box + '}';
+                page += '@bottom-' + E + '{content:counter(page);' + box + '}';
+            }
+            page += '}';
+            if (T.differentFirstPage) page += '@page:first{@top-center{content:none;border:none}@bottom-center{content:none}@bottom-left{content:none}@bottom-right{content:none}}';
+            const css = page
+                + 'html,body{margin:0;padding:0;background:#fff;}'
+                + '*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+                + pdfStyleCss('.pdf-doc', dir.rtl)
+                + '.pdf-doc h1,.pdf-doc h2,.pdf-doc h3,.pdf-doc h4,.pdf-doc h5{break-after:avoid;page-break-after:avoid;}'
+                + '.pdf-doc tr,.pdf-doc pre,.pdf-doc blockquote,.pdf-doc img,.pdf-doc .mermaid-container,.pdf-doc .katex-display{break-inside:avoid;page-break-inside:avoid;}'
+                + '.pdf-doc thead{display:table-header-group;}.pdf-doc p,.pdf-doc li{orphans:2;widows:2;}'
+                + '.pdf-doc img{max-width:100%;}';
+            const katexCss = (document.querySelector('link[href*="katex"]') || {}).href || '';
+            const html = '<!DOCTYPE html><html lang="' + (dir.rtl ? dir.lang.slice(0, 2) : 'en') + '" dir="' + (dir.rtl ? 'rtl' : 'ltr') + '"><head><meta charset="utf-8">'
+                + '<title>' + escapeXml(fileName) + '</title>'
+                + (katexCss ? '<link rel="stylesheet" href="' + katexCss + '">' : '')
+                + '<style>' + css + '</style></head><body><div class="pdf-doc">' + preview.innerHTML + '</div></body></html>';
+            return { html, fileName, rtl: dir.rtl };
+        }
+        function cssFontList(primary) {
+            const cs = DOC_THEME.csFont || '';
+            return ['"' + (primary || 'Calibri') + '"'].concat(cs ? ['"' + cs + '"'] : []).concat(['Carlito', '"Segoe UI"', 'Arial', 'sans-serif']).join(',');
+        }
+        async function markdownToPdf(markdown) {
+            await renderPreview();
+            const { html, fileName } = buildPrintHtml(markdown);
+            const ifr = document.createElement('iframe');
+            ifr.setAttribute('aria-hidden', 'true');
+            ifr.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none;';
+            document.body.appendChild(ifr);
+            const d = ifr.contentDocument;
+            d.open(); d.write(html); d.close();
+            await new Promise(r => { if (d.readyState === 'complete') r(); else ifr.addEventListener('load', r, { once: true }); setTimeout(r, 4000); });
+            try { await d.fonts.ready; } catch (e) {}
+            await new Promise(r => setTimeout(r, 250));
+            const oldTitle = document.title;
+            document.title = fileName;                     // the browser suggests this as the PDF file name
+            try { ifr.contentWindow.focus(); ifr.contentWindow.print(); }
+            finally { setTimeout(() => { document.title = oldTitle; ifr.remove(); }, 1500); }
         }
 
         (function initOrganizedUi() {
@@ -4792,11 +4871,12 @@ FINISH WITH
                 if (!markdown) { showMessage('Please enter markdown content', 'error'); return; }
                 pdfBtn.disabled = true;
                 pdfBtn.textContent = '⏳ PDF…';
+                showMessage('Preparing the PDF — in the print window choose “Save as PDF”', 'success');
                 showProgress(); setProgress(30);
                 try {
                     await markdownToPdf(markdown);
                     setProgress(100);
-                    showMessage('✓ PDF downloaded', 'success');
+                    showMessage('✓ PDF ready — choose “Save as PDF” as the printer', 'success');
                     setTimeout(hideProgress, 500);
                 } catch (err) {
                     console.error('PDF error:', err);
