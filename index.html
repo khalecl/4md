@@ -5288,7 +5288,7 @@ FINISH WITH
 
             if (kind === 'cards' || kind === 'icons') {
                 const short = top.every(i => { const t = splitTerm(i.text) || { term: '', desc: i.text }; return t.desc.length <= 70 && Math.max(0, ...t.term.split(/\s+/).map(x => x.length)) <= 9; });
-                const cols = n <= 3 ? n : (n === 4 ? (short ? 4 : 2) : 3);
+                const cols = n <= 3 ? n : (n === 4 ? (short ? 4 : 2) : (n === 5 && top.every(i => (splitTerm(i.text) || { desc: i.text }).desc.length <= 60) ? 5 : 3));
                 const rows = Math.ceil(n / cols), g = 0.3;
                 const cw = (w - g * (cols - 1)) / cols;
                 const ic = icons ? 0.66 : 0;
@@ -5681,6 +5681,15 @@ FINISH WITH
                 for (const k of [1.45, 1.35, 1.25, 1.15, 1.08]) { const G = scaleF(k); WORD_OVERFLOW = false; const hh = measure(G); if (!WORD_OVERFLOW && hh <= box.h * 0.82) { F = G; break; } }
                 WORD_OVERFLOW = false;
             }
+            // too tall for the content area (short template body, five cards, long Arabic text): shrink until it fits
+            if (page.blocks.length && measure(F) > box.h) {
+                const base = F;
+                for (const k of [0.92, 0.85, 0.78, 0.71, 0.64, 0.58]) {
+                    const G = { title: base.title, body: Math.max(11, Math.round(base.body * k)), head: Math.max(12, Math.round(base.head * k)), desc: Math.max(10, Math.round(base.desc * k)), small: Math.max(9, Math.round(base.small * k)) };
+                    F = G;
+                    if (measure(G) <= box.h) break;
+                }
+            }
             const hs = page.blocks.map(b => blockH(b, tw, F, th, O));
             const total = hs.reduce((a, v) => a + v, 0) + 0.3 * Math.max(0, hs.length - 1);
             let y = box.y + (O.vcenter && total < box.h ? (box.h - total) * 0.42 : 0);
@@ -5941,6 +5950,11 @@ FINISH WITH
             const s1 = xmlAttr(bgx, /<a:srgbClr val="([0-9A-Fa-f]{6})"/), s2 = xmlAttr(bgx, /<a:schemeClr val="(\w+)"/);
             if (s1) bgHex = s1; else if (s2) bgHex = schemeHex({ bg1: 'lt1', bg2: 'lt2', tx1: 'dk1', tx2: 'dk2', lt1: 'lt1', lt2: 'lt2', dk1: 'dk1', dk2: 'dk2' }[s2] || 'lt1');
             const hasPicBg = /<a:blipFill/.test(bgx);
+            // a slide-number field drawn by the master/layouts themselves (not a placeholder) means the template numbers every slide
+            let ownSlideNum = false;
+            const ownNum = x => x.split(/<p:sp>|<p:sp /).slice(1).some(sp => !/<p:ph\b/.test(sp) && /type="slidenum"/.test(sp));
+            if (ownNum(mXml)) ownSlideNum = true;
+            for (const l of [L.cover, L.content, L.section]) { if (l && ownNum(await rd(l.path))) ownSlideNum = true; }
             return {
                 zip, W, H, cx, cy, masterId, masterPath, themePath, layouts, L,
                 geo: {
@@ -5948,6 +5962,7 @@ FINISH WITH
                     cover: { title: ph(L.cover, ['ctrTitle', 'title']), sub: ph(L.cover, ['subTitle', 'body', 'obj']) },
                     section: { title: ph(L.section, ['title', 'ctrTitle']), body: ph(L.section, ['body', 'obj', 'subTitle']) }
                 },
+                ownSlideNum,
                 dark: !!bgHex && !hasPicBg && pxLum(bgHex.toUpperCase()) < 0.35, bgHex: bgHex.toUpperCase(),
                 lt1: schemeHex('lt1').toUpperCase(), dk1: schemeHex('dk1').toUpperCase()
             };
@@ -6221,8 +6236,9 @@ FINISH WITH
                             return p ? toPlaceholder(sp, p.ptag) : sp;
                         }
                         if (/<p:ph type="sldNum"/.test(sp)) {
+                            if (T.ownSlideNum) return '';            // the template already prints a number
                             const p = lay.ph.find(q => q.type === 'sldNum');
-                            if (p) return toPlaceholder(sp, p.ptag).replace(/<a:t>[^<]*<\/a:t>/, m => m);
+                            if (p) return toPlaceholder(sp, p.ptag).replace('<a:bodyPr><a:normAutofit/></a:bodyPr>', '<a:bodyPr wrap="none"/>');
                         }
                         return sp;
                     });
@@ -6290,6 +6306,8 @@ FINISH WITH
         async function buildDeckInner(markdown, O, th, F, T) {
             FONT_K = /georgia|times|cambria|garamond|book|serif|palatino/i.test(th.head + th.body) ? 0.62 : 0.56;
             MEASURE_FONT = th.body; MEASURE_HEAD = th.head;
+            const dirM = deckDirection(O, markdown);
+            if (dirM.rtl) { MEASURE_FONT = MEASURE_HEAD = O.rtlFont || 'Arial'; FONT_K = 0.58; }
             const pptx = new PptxGenJS();
             let LAY = { '16:9': ['LAYOUT_WIDE', 13.333, 7.5], '4:3': ['LAYOUT_4x3', 10, 7.5], '16:10': ['LAYOUT_16x10', 10, 6.25] }[O.ratio] || ['LAYOUT_WIDE', 13.333, 7.5];
             if (T) { pptx.defineLayout({ name: 'TEMPLATE', width: T.W, height: T.H }); LAY = ['TEMPLATE', T.W, T.H]; }
