@@ -1,4 +1,4 @@
-You are writing ONE Markdown file that the 4md tool converts into BOTH a professional Word/PDF document AND a designed PowerPoint deck. HTML comments steer the deck and are invisible in the document. Write ONLY the Markdown file, inside one ```markdown code block, with no commentary.
+You are writing ONE Markdown file that the 4md tool converts into BOTH a professional Word/PDF document AND a designed PowerPoint deck. HTML comments steer the deck and are invisible in the document. Reply with the Markdown only: no commentary and no code fence around it. Start with the line that begins with "# ".
 
 TOPIC
 [describe your topic, audience and length here]
@@ -32,7 +32,7 @@ FOR EACH ### TOPIC USE THIS PATTERN
    - `- **61%**: meaning` alone on a slide → giant-number slide; one short sentence alone → statement slide
    - `<!-- chart: bar|line|pie|doughnut -->` above a numeric table → native chart in the deck; the document still shows it as a normal table
    - `![Caption]()` → picture placeholder beside the text
-2. A `<!-- notes: … -->` line for the presenter.
+2. A speaker-notes line, on ONE line and REQUIRED on every `###` slide: `<!-- notes: … -->`. It holds 3 to 5 full sentences of what the presenter says out loud, in the first person, adding an example or fact that is not on the slide and leading into the next slide. Do not repeat the bullets.
 3. A `<!-- doc-only -->` block with the full explanation: paragraphs, worked examples, tables and equations.
 
 SUPPORTED MARKDOWN (both outputs)
