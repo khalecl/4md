@@ -2012,6 +2012,9 @@ FINISH WITH
             t = t.replace(/^[ \t]*(?:>\s*)?(?:[-*]\s+)?(?:\*\*|__|\*|_)?\s*(?:(?:speaker|presenter|talking|slide)\s+)?(?:notes?|script|ملاحظات(?:\s+(?:المتحدث|المقدم|العرض))?|הערות(?:\s+דובר)?)\s*(?:\*\*|__|\*|_)?\s*[:：]\s*(?:\*\*|__|\*|_)?\s*(.+?)\s*$/gim,
                 (m, body) => '<!-- notes: ' + body.replace(/-->/g, '—>').replace(/^(\*\*|__|\*|_)|(\*\*|__|\*|_)$/g, '') + ' -->');
             t = t.replace(/^(#{1,6})[ \t]*(?:slide|section|الشريحة|شريحة|القسم)[ \t]*\d+[ \t]*[:.\-–—)][ \t]*/gim, '$1 ');
+            // list markers: "1)" and Arabic-Indic / Persian digits ("١." "۱)") become "1."
+            const DIG = c => { const k = c.charCodeAt(0); return k >= 0x660 && k <= 0x669 ? String(k - 0x660) : k >= 0x6F0 && k <= 0x6F9 ? String(k - 0x6F0) : c; };
+            t = t.replace(/^([ \t]*)([0-9\u0660-\u0669\u06F0-\u06F9]{1,3})[.)\u066B\u06D4][ \t]+(?=\S)/gm, (m, ind, num) => ind + num.replace(/./g, DIG) + '. ');
             return t;
         }
         function forDocument(md) {
@@ -2554,7 +2557,7 @@ FINISH WITH
             const _rtl = x => docxReorder(_dir.rtl ? docxRtl(x, _dir.lang, DOC_THEME.csFont || 'Arial') : x);
             docXml = _rtl(docXml);
             zip.file('word/styles.xml', _rtl(getStyles()));
-            zip.file('word/numbering.xml', _rtl(getNumbering()));
+            zip.file('word/numbering.xml', _rtl(getNumbering(_dir.rtl)));
             zip.file('word/settings.xml', getSettings());
             zip.file('word/fontTable.xml', getFontTable());
             zip.file('word/webSettings.xml', getWebSettings());
@@ -2723,11 +2726,12 @@ FINISH WITH
             return xml;
         }
 
-        function getNumbering() {
+        function getNumbering(rtl) {
             // Word convention: each level indents 360 twips further, hanging indent 360
             function lvlIndent(l) { return 720 + (l * 360); }
 
-            const decFmts  = ['decimal', 'lowerLetter', 'lowerRoman', 'decimal', 'lowerLetter'];
+            const decFmts  = rtl ? ['decimal', 'arabicAbjad', 'decimal', 'arabicAbjad', 'decimal']
+                                 : ['decimal', 'lowerLetter', 'lowerRoman', 'decimal', 'lowerLetter'];
             const bulChars = ['\uF0B7', 'o', '\uF0A7', '\uF0B7', 'o'];
             const bulFonts = ['Symbol', 'Courier New', 'Wingdings', 'Symbol', 'Courier New'];
 
@@ -2771,7 +2775,7 @@ FINISH WITH
                 if (inst.abstractId === 0) {
                     for (let l = 0; l < 5; l++) {
                         xml += '<w:lvlOverride w:ilvl="' + l + '">'
-                             + '<w:startOverride w:val="1"/></w:lvlOverride>';
+                             + '<w:startOverride w:val="' + (l === 0 ? (inst.start || 1) : 1) + '"/></w:lvlOverride>';
                     }
                 }
                 xml += '</w:num>';
@@ -3644,12 +3648,13 @@ FINISH WITH
             let activeOrderedNumId = null;   // null when we are not inside an ordered list
             let activeBulletNumId = null;
 
-            function newNumId(abstractId) {
+            function newNumId(abstractId, start) {
                 numIdCounter++;
                 const id = numIdCounter;
-                NUM_INSTANCES.push({ numId: id, abstractId: abstractId });
+                NUM_INSTANCES.push({ numId: id, abstractId: abstractId, start: start || 1 });
                 return id;
             }
+            let lastOrdered = null;          // { numId, value } of the last top-level numbered item, for "1. … text … 2." continuation
             let xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:body>';
 
             const lines = processed.split(/\r?\n/);
@@ -3668,6 +3673,7 @@ FINISH WITH
                 if (!isListLine && trimmed !== '' && !isPlaceholder) {
                     activeOrderedNumId = null;
                     activeBulletNumId = null;
+                    if (/^#{1,6}\s/.test(trimmed) || /^\|/.test(trimmed) || /^```/.test(trimmed)) lastOrdered = null;
                 }
 
                 if (inTable && !line.includes('|')) {
@@ -3774,8 +3780,14 @@ FINISH WITH
                 else if (line.match(/^[ \t]*\d+\.\s/)) {
                     const { level, trimmedLine } = detectListLevel(line);
                     const text = trimmedLine.replace(/^\d+\.\s+/, '');
-                    // Start a new numbering instance whenever a fresh list begins
-                    if (activeOrderedNumId === null) activeOrderedNumId = newNumId(0);
+                    const num = parseInt((trimmedLine.match(/^(\d+)\./) || [0, 1])[1], 10);
+                    // Start a new numbering instance whenever a fresh list begins, unless it simply carries on
+                    // the previous list after a paragraph ("1. … text … 2."), and keep its first number
+                    if (activeOrderedNumId === null) {
+                        if (level === 0 && lastOrdered && num === lastOrdered.value + 1) activeOrderedNumId = lastOrdered.numId;
+                        else activeOrderedNumId = newNumId(0, level === 0 ? num : 1);
+                    }
+                    if (level === 0) lastOrdered = { numId: activeOrderedNumId, value: num };
                     activeBulletNumId = null;
                     xml += '<w:p><w:pPr><w:pStyle w:val="ListParagraph"/>'
                         + '<w:numPr><w:ilvl w:val="' + level + '"/>'
