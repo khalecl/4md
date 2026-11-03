@@ -1162,6 +1162,7 @@ FINISH WITH
                         <option value="rtl">Right to left (Arabic, Hebrew, Persian, Urdu)</option>
                     </select></label>
                     <label class="ds-check"><input type="checkbox" id="dsToc"> Table of contents</label>
+                    <label class="ds-check ds-wide"><input type="checkbox" id="dsBidiMarks" checked> Fix mixed Arabic/English order (direction marks around English inside Arabic text, and the reverse) — Word, PDF and slides</label>
                 </div>
                 <p class="ds-note">Right to left mirrors the Word file and the PDF: paragraphs, lists, tables, quotes and page numbers run from the right. Code and equations stay left to right. The Arabic/Hebrew font is the “Complex-script font” on the Template tab (Arial if empty).</p>
             </section>
@@ -1522,7 +1523,8 @@ FINISH WITH
             differentFirstPage: true,
             toc: false,
             tocDepth: 3,
-            direction: 'auto'
+            direction: 'auto',
+            bidiMarks: true
         });
 
         function themePageDims() {
@@ -2077,6 +2079,7 @@ FINISH WITH
                     }
                 }
             }
+            try { bidiMarkDom(preview, preview.dir === 'rtl'); } catch (e) {}
         }
 
         // Update preview
@@ -2554,15 +2557,17 @@ FINISH WITH
             zip.file('docProps/app.xml', getAppXml(markdown));
             zip.file('word/_rels/document.xml.rels', getDocumentRelsWithImages(imageRels));
             const _dir = docDirection(markdown);
-            const _rtl = x => docxReorder(_dir.rtl ? docxRtl(x, _dir.lang, DOC_THEME.csFont || 'Arial') : x);
+            const _rtl = x => docxReorder(docxParaDir(_dir.rtl ? docxRtl(x, _dir.lang, DOC_THEME.csFont || 'Arial') : x, _dir.rtl, DOC_THEME.csFont || 'Arial'));
+            if (bidiOn()) docXml = bidiMarkXml(docXml, 'w:p', 'w:t', /<w:pStyle w:val="Code"\/>/, _dir.rtl);
             docXml = _rtl(docXml);
             zip.file('word/styles.xml', _rtl(getStyles()));
             zip.file('word/numbering.xml', _rtl(getNumbering(_dir.rtl)));
             zip.file('word/settings.xml', getSettings());
             zip.file('word/fontTable.xml', getFontTable());
             zip.file('word/webSettings.xml', getWebSettings());
-            zip.file('word/footer1.xml', _rtl(getFooter()));
-            zip.file('word/header1.xml', _rtl(getHeader()));
+            const _bm = x => bidiOn() ? bidiMarkXml(x, 'w:p', 'w:t', null, _dir.rtl) : x;
+            zip.file('word/footer1.xml', _rtl(_bm(getFooter())));
+            zip.file('word/header1.xml', _rtl(_bm(getHeader())));
             zip.file('word/theme/theme1.xml', getTheme());
             zip.file('word/document.xml', docXml);
 
@@ -3991,7 +3996,7 @@ FINISH WITH
                 bodySize: $('dsBodySize'), line: $('dsLine'), accent: $('dsAccent'),
                 fCs: $('dsfCs'), tableStyle: $('dsTableStyle'), titleRule: $('dsTitleRule'),
                 pageSize: $('dsPageSize'), orient: $('dsOrient'), margins: $('dsMargins'),
-                toc: $('dsToc'), direction: $('dsDirection'),
+                toc: $('dsToc'), direction: $('dsDirection'), bidiMarks: $('dsBidiMarks'),
                 headerMode: $('dsHeaderMode'), headerText: $('dsHeaderText'),
                 footerMode: $('dsFooterMode'), footerText: $('dsFooterText'),
                 firstPage: $('dsFirstPage'),
@@ -4066,6 +4071,7 @@ FINISH WITH
                     differentFirstPage: els.firstPage.checked,
                     toc: els.toc.checked,
                     direction: els.direction ? els.direction.value : 'auto',
+                    bidiMarks: els.bidiMarks ? els.bidiMarks.checked : true,
                     tocDepth: 3,
                                         tableAlign: els.tblAlign.value,
                     tableHeadAlign: els.tblHeadAlign.value,
@@ -4764,6 +4770,80 @@ FINISH WITH
             return /^<\?xml/.test(out) ? out : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + out;
         }
 
+
+        // ===== MIXED-DIRECTION TEXT (Arabic/Hebrew with English, numbers) =====
+        // Inside a mostly-RTL paragraph, each English stretch is fenced with RIGHT-TO-LEFT MARKs (U+200F) so the brackets,
+        // dots and dashes next to it stay on the Arabic side; inside a mostly-LTR paragraph, Arabic stretches are fenced with
+        // LEFT-TO-RIGHT MARKs (U+200E). Word, PowerPoint, browsers and LibreOffice all honour these marks.
+        const BIDI_R = '\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF';
+        const BIDI_R_RE = new RegExp('[' + BIDI_R + ']', 'g');
+        const BIDI_LAT_CHUNK = /[A-Za-z0-9](?:[A-Za-z0-9._\/\-\u2013+&'\u2019%#]|[ ,:](?=[A-Za-z0-9]))*/g;
+        const BIDI_RTL_CHUNK = new RegExp('[' + BIDI_R + '](?:[' + BIDI_R + '0-9\u0660-\u0669\u06F0-\u06F9\u060C\u061B\u061F]|[ ،](?=[' + BIDI_R + ']))*', 'g');
+        function bidiOn() { return !(typeof DOC_THEME !== 'undefined' && DOC_THEME.bidiMarks === false); }
+        // direction of one paragraph: the dominant script decides, with a lean towards the document's own direction
+        function paraDir(t, deckRtl) {
+            t = String(t || '');
+            const r = (t.match(BIDI_R_RE) || []).length, l = (t.match(/[A-Za-z]/g) || []).length;
+            if (!r && !l) return null;
+            if (!r) return 'ltr';
+            if (!l) return 'rtl';
+            if (deckRtl) return l > r * 1.5 ? 'ltr' : 'rtl';
+            return r > l * 1.5 ? 'rtl' : 'ltr';
+        }
+        function bidiBase(t, deckRtl) {
+            t = String(t || '');
+            if (!(t.match(BIDI_R_RE) || []).length || !/[A-Za-z]/.test(t)) return null;   // marks only where both scripts meet
+            return paraDir(t, deckRtl);
+        }
+        function bidiMark(t, base) {
+            if (!t || !base) return t;
+            if (base === 'rtl') return t.replace(BIDI_LAT_CHUNK, m => {
+                if (!/[A-Za-z]/.test(m) && !/\d[\/\u2013\-:]\d/.test(m)) return m;     // plain numbers are fine on their own
+                const tail = (m.match(/[._\/\-\u2013:]+$/) || [''])[0];
+                const core = tail ? m.slice(0, -tail.length) : m;
+                return '\u200F' + core + '\u200F' + tail;
+            });
+            return t.replace(BIDI_RTL_CHUNK, m => '\u200E' + m + '\u200E');
+        }
+        function xUnesc(t) { return t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&'); }
+        function xEsc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        // WordprocessingML / DrawingML: decide per paragraph, mark inside each text element
+        function bidiMarkXml(xml, P, T, skip, deckRtl) {
+            const pRe = new RegExp('<' + P + '\\b[^>]*>[\\s\\S]*?</' + P + '>', 'g');
+            const tRe = new RegExp('(<' + T + '\\b[^>]*>)([^<]*)(</' + T + '>)', 'g');
+            return xml.replace(pRe, para => {
+                if (skip && skip.test(para)) return para;
+                let all = ''; para.replace(tRe, (m, a, t) => { all += xUnesc(t); return m; });
+                const base = bidiBase(all, deckRtl);
+                if (!base) return para;
+                return para.replace(tRe, (m, a, t, c) => a + xEsc(bidiMark(xUnesc(t), base)) + c);
+            });
+        }
+        // HTML preview / PDF: decide per block, mark the text nodes that belong to it
+        function bidiMarkDom(root, deckRtl) {
+            if (!root) return;
+            const BLOCK = 'P,LI,H1,H2,H3,H4,H5,H6,TD,TH,BLOCKQUOTE,FIGCAPTION,DT,DD';
+            const isBlock = el => BLOCK.split(',').includes(el.tagName);
+            root.querySelectorAll(BLOCK.toLowerCase()).forEach(block => {
+                if (block.closest('pre')) return;
+                const dir = paraDir(block.textContent, deckRtl);
+                if (dir && dir !== (deckRtl ? 'rtl' : 'ltr')) block.setAttribute('dir', dir);    // an English paragraph in Arabic text, or the reverse
+                if (!bidiOn()) return;
+                const base = bidiBase(block.textContent, deckRtl);
+                if (!base) return;
+                const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+                    acceptNode: n => {
+                        for (let e = n.parentElement; e && e !== block; e = e.parentElement) {
+                            if (isBlock(e) || /^(PRE|CODE|SVG|MATH|SCRIPT|STYLE)$/i.test(e.tagName) || (e.classList && (e.classList.contains('katex') || e.classList.contains('mermaid-container')))) return NodeFilter.FILTER_REJECT;
+                        }
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                });
+                const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+                nodes.forEach(n => { const v = bidiMark(n.nodeValue, base); if (v !== n.nodeValue) n.nodeValue = v; });
+            });
+        }
+
         // ===== DOCUMENT DIRECTION (DOCX + PDF) =====
         function docDirection(md) {
             const mode = DOC_THEME.direction || 'auto';
@@ -4799,9 +4879,42 @@ FINISH WITH
             xml = xml.replace(/<w:style\b[^>]*w:styleId="Code"[^>]*>[\s\S]*?<\/w:style>/, st => st.replace(/<w:bidi\/>/, '<w:bidi w:val="0"/>'));
             xml = xml.replace(/<w:style\b[^>]*w:styleId="Quote"[^>]*>[\s\S]*?<\/w:style>/, st => st.replace(/<w:pBdr>([\s\S]*?)<\/w:pBdr>/, (m, b) =>
                 /<w:right\b/.test(b) ? m : '<w:pBdr>' + b.replace(/<w:left\b/, '<w:right') + '</w:pBdr>'));
+            xml = xml.replace(/<w:b( w:val="[^"]*")?\/>(?!<w:bCs)/g, '<w:b$1/><w:bCs$1/>');
+            xml = xml.replace(/<w:i( w:val="[^"]*")?\/>(?!<w:iCs)/g, '<w:i$1/><w:iCs$1/>');
+            xml = xml.replace(/<w:sz w:val="(\d+)"\/>(?!<w:szCs)/g, '<w:sz w:val="$1"/><w:szCs w:val="$1"/>');
+            if (csFont) {
+                const f = escapeXml(csFont);
+                xml = xml.replace(/<w:rFonts\b([^>]*?)\/>/g, (m, a) => {
+                    a = a.replace(/\s+w:cs="[^"]*"/, '').replace(/\s+w:cstheme="[^"]*"/, '');
+                    return '<w:rFonts' + a + ' w:cs="' + f + '"/>';
+                });
+            }
+            xml = xml.replace(/(<w:lang\b[^>]*\bw:bidi=")[^"]*"/g, '$1' + lang + '"');
+            return xml;
+        }
+
+
+        // Per paragraph: an English paragraph in a right-to-left document runs left-to-right and the reverse;
+        // Arabic/Hebrew stretches are split into their own runs marked <w:rtl/> (Word orders them right-to-left only then).
+        function docxParaDir(xml, deckRtl, csFont) {
+            if (!/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(xml) && !deckRtl) return xml;
+            xml = xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, para => {
+                if (/<w:pStyle w:val="Code"\/>/.test(para)) return para;
+                let all = ''; para.replace(/<w:t\b[^>]*>([^<]*)<\/w:t>/g, (m, t) => { all += xUnesc(t); return m; });
+                const dir = paraDir(all, deckRtl);
+                if (dir === 'ltr' && deckRtl) para = para.replace(/<w:bidi\/>/, '<w:bidi w:val="0"/>');
+                if (dir === 'rtl' && !deckRtl) {
+                    if (!/<w:pPr>/.test(para)) para = para.replace(/^(<w:p\b[^>]*>)/, '$1<w:pPr></w:pPr>');
+                    para = para.replace(/<w:pPr>[\s\S]*?<\/w:pPr>/, m => wInsert(m, 'bidi', '<w:bidi/>', W_PPR_AFTER_BIDI));
+                }
+                return para;
+            });
+            return docxSplitRuns(xml, csFont);
+        }
+        function docxSplitRuns(xml, csFont) {
             // runs: Word lays out Arabic/Hebrew as right-to-left (and uses the cs font) only in runs marked <w:rtl/>,
             // so split every run into right-to-left and Latin parts, as Word does itself
-            const RTL_CH = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+            const RTL_CH = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF\u200F]/;
             const unesc = t => t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
             xml = xml.replace(/<w:r>(<w:rPr>[\s\S]*?<\/w:rPr>)?<w:t( [^>]*)?>([^<]*)<\/w:t><\/w:r>/g, (m, rpr, tattr, txt) => {
                 const raw = unesc(txt);
@@ -4829,17 +4942,6 @@ FINISH WITH
             // page sections
             xml = xml.replace(/<w:sectPr\b[^>]*>[\s\S]*?<\/w:sectPr>/g, m => wInsert(m, 'bidi', '<w:bidi/>', W_SECT_AFTER_BIDI));
             // runs: Word uses the complex-script settings (bCs, iCs, szCs, cs font) for Arabic and Hebrew letters
-            xml = xml.replace(/<w:b( w:val="[^"]*")?\/>(?!<w:bCs)/g, '<w:b$1/><w:bCs$1/>');
-            xml = xml.replace(/<w:i( w:val="[^"]*")?\/>(?!<w:iCs)/g, '<w:i$1/><w:iCs$1/>');
-            xml = xml.replace(/<w:sz w:val="(\d+)"\/>(?!<w:szCs)/g, '<w:sz w:val="$1"/><w:szCs w:val="$1"/>');
-            if (csFont) {
-                const f = escapeXml(csFont);
-                xml = xml.replace(/<w:rFonts\b([^>]*?)\/>/g, (m, a) => {
-                    a = a.replace(/\s+w:cs="[^"]*"/, '').replace(/\s+w:cstheme="[^"]*"/, '');
-                    return '<w:rFonts' + a + ' w:cs="' + f + '"/>';
-                });
-            }
-            xml = xml.replace(/(<w:lang\b[^>]*\bw:bidi=")[^"]*"/g, '$1' + lang + '"');
             return xml;
         }
 
@@ -6385,9 +6487,32 @@ FINISH WITH
                 F['ppt/presentation.xml'] = F['ppt/presentation.xml'].replace(/<p:presentation\b(?![^>]*\brtl=)/, '<p:presentation rtl="1"');
                 Object.keys(F).filter(n => /^ppt\/theme\/theme\d+\.xml$/.test(n)).forEach(n => { F[n] = rtlThemeFonts(F[n], opt.rtl.font); });
             }
+            // 5b2. mixed Arabic/English paragraphs: direction marks around the minority script
+            Object.keys(F).filter(n => /^ppt\/(slides|notesSlides)\/[^/]+\.xml$/.test(n)).forEach(n => {
+                const deckRtl = !!opt.rtl;
+                if (bidiOn()) F[n] = bidiMarkXml(F[n], 'a:p', 'a:t', null, deckRtl);
+                // a paragraph whose main script runs the other way gets its own direction
+                F[n] = F[n].replace(/<a:p>[\s\S]*?<\/a:p>/g, para => {
+                    let all = ''; para.replace(/<a:t>([^<]*)<\/a:t>/g, (m, t) => { all += xUnesc(t); return m; });
+                    const d = paraDir(all, deckRtl);
+                    if (!d || (d === 'rtl') === deckRtl) return para;
+                    const want = d === 'rtl' ? '1' : '0';
+                    if (/^<a:p><a:pPr\b/.test(para)) return para.replace(/<a:pPr\b([^>]*?)(\/?)>/, (m, at, cl) => '<a:pPr' + at.replace(/\s*rtl="[01]"/, '') + ' rtl="' + want + '"' + cl + '>');
+                    return para.replace(/^<a:p>/, '<a:p><a:pPr rtl="' + want + '"/>');
+                });
+            });
+            // 5c. speaker notes: PptxGenJS stamps one p14:creationId on the notes master and every notes page,
+            //     and sizes the notes page from the slide (13.3 in tall) while its notes master is laid out for 10 in.
+            Object.keys(F).filter(n => /^ppt\/(notesSlides|notesMasters)\/[^/]+\.xml$/.test(n)).forEach(n => {
+                F[n] = F[n].replace(/<p:extLst>(?:(?!<\/p:extLst>)[\s\S])*?p14:creationId[\s\S]*?<\/p:extLst>/g, '');
+            });
+            if (F['ppt/presentation.xml']) F['ppt/presentation.xml'] = F['ppt/presentation.xml'].replace(/<p:notesSz\b[^>]*\/>/, '<p:notesSz cx="6858000" cy="9144000"/>');
             // 6. content types: drop parts that do not exist, declare the new ones
             let ct = F['[Content_Types].xml'];
             ct = ct.replace(/<Override\b[^>]*PartName="\/([^"]+)"[^>]*\/>/g, (t, p) => F[p] ? t : '');
+            // file types declared but not present in the package
+            const exts = new Set(Object.keys(F).map(n => n.split('/').pop().split('.').pop().toLowerCase()));
+            ct = ct.replace(/<Default\b[^>]*Extension="([^"]+)"[^>]*\/>/g, (t, e) => (e.toLowerCase() === 'xml' || e.toLowerCase() === 'rels' || exts.has(e.toLowerCase())) ? t : '');
             const have = p => new RegExp('PartName="/' + p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"').test(ct);
             const add = [];
             if (F['ppt/theme/theme2.xml'] && !have('ppt/theme/theme2.xml')) add.push('<Override PartName="/ppt/theme/theme2.xml" ContentType="' + CT_OVERRIDE.theme + '"/>');
