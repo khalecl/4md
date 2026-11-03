@@ -4777,7 +4777,7 @@ FINISH WITH
         // LEFT-TO-RIGHT MARKs (U+200E). Word, PowerPoint, browsers and LibreOffice all honour these marks.
         const BIDI_R = '\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF';
         const BIDI_R_RE = new RegExp('[' + BIDI_R + ']', 'g');
-        const BIDI_LAT_CHUNK = /[A-Za-z0-9](?:[A-Za-z0-9._\/\-\u2013+&'\u2019%#]|[ ,:](?=[A-Za-z0-9]))*/g;
+        const BIDI_LAT_CHUNK = /[A-Za-z0-9](?:[A-Za-z0-9._\/\-\u2013+&'\u2019%#\u00B2\u00B3\u00B9\u00B0\u2070-\u209F\u00D7]|(?:[,;:]?[ ]+|[,;:])(?=[A-Za-z0-9]))*/g;
         const BIDI_RTL_CHUNK = new RegExp('[' + BIDI_R + '](?:[' + BIDI_R + '0-9\u0660-\u0669\u06F0-\u06F9\u060C\u061B\u061F]|[ ،](?=[' + BIDI_R + ']))*', 'g');
         function bidiOn() { return !(typeof DOC_THEME !== 'undefined' && DOC_THEME.bidiMarks === false); }
         // direction of one paragraph: the dominant script decides, with a lean towards the document's own direction
@@ -4802,7 +4802,7 @@ FINISH WITH
                 const tail = (m.match(/[._\/\-\u2013:]+$/) || [''])[0];
                 const core = tail ? m.slice(0, -tail.length) : m;
                 return '\u200F' + core + '\u200F' + tail;
-            });
+            }).replace(/([(\[{])\u200F/g, '\u200F$1\u200F').replace(/\u200F([)\]}])/g, '\u200F$1\u200F').replace(/\u200F{2,}/g, '\u200F');
             return t.replace(BIDI_RTL_CHUNK, m => '\u200E' + m + '\u200E');
         }
         function xUnesc(t) { return t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&'); }
@@ -4899,7 +4899,7 @@ FINISH WITH
         function docxParaDir(xml, deckRtl, csFont) {
             if (!/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(xml) && !deckRtl) return xml;
             xml = xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g, para => {
-                if (/<w:pStyle w:val="Code"\/>/.test(para)) return para;
+                if (/<w:pStyle w:val="Code"\/>/.test(para)) return docxSplitRuns(para, false);
                 let all = ''; para.replace(/<w:t\b[^>]*>([^<]*)<\/w:t>/g, (m, t) => { all += xUnesc(t); return m; });
                 const dir = paraDir(all, deckRtl);
                 if (dir === 'ltr' && deckRtl) para = para.replace(/<w:bidi\/>/, '<w:bidi w:val="0"/>');
@@ -4907,11 +4907,13 @@ FINISH WITH
                     if (!/<w:pPr>/.test(para)) para = para.replace(/^(<w:p\b[^>]*>)/, '$1<w:pPr></w:pPr>');
                     para = para.replace(/<w:pPr>[\s\S]*?<\/w:pPr>/, m => wInsert(m, 'bidi', '<w:bidi/>', W_PPR_AFTER_BIDI));
                 }
-                return para;
+                // split runs with the paragraph's direction (code blocks: left-to-right)
+                const isCode = /<w:pStyle w:val="Code"\/>/.test(para);
+                return docxSplitRuns(para, !isCode && (dir === 'rtl' || (!dir && deckRtl)));
             });
-            return docxSplitRuns(xml, csFont);
+            return xml;
         }
-        function docxSplitRuns(xml, csFont) {
+        function docxSplitRuns(xml, rtlPara) {
             // runs: Word lays out Arabic/Hebrew as right-to-left (and uses the cs font) only in runs marked <w:rtl/>,
             // so split every run into right-to-left and Latin parts, as Word does itself
             const RTL_CH = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF\u200F]/;
@@ -4927,9 +4929,13 @@ FINISH WITH
                     return '<w:r>' + p + '<w:t xml:space="preserve">' + escapeXml(t) + '</w:t></w:r>';
                 };
                 // Latin words (with the digits, dots and dashes inside them) stay left-to-right; everything else is right-to-left
-                const parts = raw.split(/([A-Za-z][A-Za-z0-9._\-\/+#]*(?:[ \t]+[A-Za-z][A-Za-z0-9._\-\/+#]*)*)/);
+                const W1 = '[A-Za-z0-9._\\-\\/+#%&\\u00B2\\u00B3\\u00B9\\u00B0\\u2070-\\u209F\\u00D7]';
+                const LAT = new RegExp('([A-Za-z]' + W1 + '*(?:(?:[ \\t]*[,;:\\u2013\\u2014][ \\t]*|[ \\t]+)[A-Za-z0-9]' + W1 + '*)*)');
+                const parts = raw.split(LAT);
                 return parts.map((t, i) => {
-                    if (i % 2 === 1 || !RTL_CH.test(t)) return mk(t, false);
+                    if (i % 2 === 1) return mk(t, false);                       // English words
+                    if (rtlPara) return mk(t, true);                            // RTL paragraph: brackets, dots, spaces stay with the Arabic
+                    if (!RTL_CH.test(t)) return mk(t, false);
                     // only the stretch from the first to the last Arabic/Hebrew letter is right-to-left; symbols around it (#, //, -) stay put
                     const a0 = t.search(RTL_CH);
                     let a1 = t.length; while (a1 > a0 && !RTL_CH.test(t[a1 - 1])) a1--;
