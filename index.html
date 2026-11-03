@@ -4780,8 +4780,36 @@ FINISH WITH
             xml = xml.replace(/<w:p>(?!<w:pPr)/g, '<w:p><w:pPr></w:pPr>');
             xml = xml.replace(/<w:pPr\/>/g, '<w:pPr></w:pPr>');
             xml = xml.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (m) => {
-                if (/<w:pStyle w:val="Code"\/>/.test(m)) return m;
+                if (/<w:pStyle w:val="Code"\/>/.test(m)) return wInsert(m, 'bidi', '<w:bidi w:val="0"/>', W_PPR_AFTER_BIDI);
                 return wInsert(m, 'bidi', '<w:bidi/>', W_PPR_AFTER_BIDI);
+            });
+            // the Code style itself stays left-to-right; the Quote bar moves to the right-hand (leading) side
+            xml = xml.replace(/<w:style\b[^>]*w:styleId="Code"[^>]*>[\s\S]*?<\/w:style>/, st => st.replace(/<w:bidi\/>/, '<w:bidi w:val="0"/>'));
+            xml = xml.replace(/<w:style\b[^>]*w:styleId="Quote"[^>]*>[\s\S]*?<\/w:style>/, st => st.replace(/<w:pBdr>([\s\S]*?)<\/w:pBdr>/, (m, b) =>
+                /<w:right\b/.test(b) ? m : '<w:pBdr>' + b.replace(/<w:left\b/, '<w:right') + '</w:pBdr>'));
+            // runs: Word lays out Arabic/Hebrew as right-to-left (and uses the cs font) only in runs marked <w:rtl/>,
+            // so split every run into right-to-left and Latin parts, as Word does itself
+            const RTL_CH = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+            const unesc = t => t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+            xml = xml.replace(/<w:r>(<w:rPr>[\s\S]*?<\/w:rPr>)?<w:t( [^>]*)?>([^<]*)<\/w:t><\/w:r>/g, (m, rpr, tattr, txt) => {
+                const raw = unesc(txt);
+                if (!RTL_CH.test(raw)) return m;
+                rpr = rpr || '';
+                const mk = (t, rtl) => {
+                    if (!t) return '';
+                    let p = rpr;
+                    if (rtl) p = p ? p.replace('</w:rPr>', '<w:rtl/></w:rPr>') : '<w:rPr><w:rtl/></w:rPr>';
+                    return '<w:r>' + p + '<w:t xml:space="preserve">' + escapeXml(t) + '</w:t></w:r>';
+                };
+                // Latin words (with the digits, dots and dashes inside them) stay left-to-right; everything else is right-to-left
+                const parts = raw.split(/([A-Za-z][A-Za-z0-9._\-\/+#]*(?:[ \t]+[A-Za-z][A-Za-z0-9._\-\/+#]*)*)/);
+                return parts.map((t, i) => {
+                    if (i % 2 === 1 || !RTL_CH.test(t)) return mk(t, false);
+                    // only the stretch from the first to the last Arabic/Hebrew letter is right-to-left; symbols around it (#, //, -) stay put
+                    const a0 = t.search(RTL_CH);
+                    let a1 = t.length; while (a1 > a0 && !RTL_CH.test(t[a1 - 1])) a1--;
+                    return mk(t.slice(0, a0), false) + mk(t.slice(a0, a1), true) + mk(t.slice(a1), false);
+                }).join('');
             });
             xml = xml.replace(/<w:pPr><\/w:pPr>/g, '');
             // tables read right-to-left
